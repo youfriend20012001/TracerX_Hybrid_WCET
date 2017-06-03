@@ -1,0 +1,284 @@
+KLEE: output directory is "/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/examples/get_sign/klee-out-276"
+Starting Z3Solver ...
+
+37670416Taint Details of unnamed
+
+ Bit :0
+ Tainted value: (Concat w80 37346608 key (w16 0))
+
+ Bit :1
+ Tainted value: (Concat w80 37346608 key (w16 1))
+
+ Bit :2
+ Tainted value: (Concat w80 37346608 key (w16 2))
+
+ Bit :3
+ Tainted value: (Concat w80 37346608 key (w16 3))
+
+ Bit :4
+ Tainted value: (Concat w80 37346608 key (w16 4))
+
+ Bit :5
+ Tainted value: (Concat w80 37346608 key (w16 5))
+
+ Bit :6
+ Tainted value: (Concat w80 37346608 key (w16 6))
+
+ Bit :7
+ Tainted value: (Concat w80 37346608 key (w16 7))
+
+
+ Bit :8
+ Tainted value: (Concat w80 37346608 key (w16 8))
+
+ Bit :9
+ Tainted value: (Concat w80 37346608 key (w16 9))
+
+ Bit :10
+ Tainted value: (Concat w80 37346608 key (w16 10))
+
+ Bit :11
+ Tainted value: (Concat w80 37346608 key (w16 11))
+
+ Bit :12
+ Tainted value: (Concat w80 37346608 key (w16 12))
+
+ Bit :13
+ Tainted value: (Concat w80 37346608 key (w16 13))
+
+ Bit :14
+ Tainted value: (Concat w80 37346608 key (w16 14))
+
+ Bit :15
+ Tainted value: (Concat w80 37346608 key (w16 15))
+
+
+ Bit :16
+ Tainted value: (Concat w80 37346608 key (w16 16))
+
+ Bit :17
+ Tainted value: (Concat w80 37346608 key (w16 17))
+
+ Bit :18
+ Tainted value: (Concat w80 37346608 key (w16 18))
+
+ Bit :19
+ Tainted value: (Concat w80 37346608 key (w16 19))
+
+ Bit :20
+ Tainted value: (Concat w80 37346608 key (w16 20))
+
+ Bit :21
+ Tainted value: (Concat w80 37346608 key (w16 21))
+
+ Bit :22
+ Tainted value: (Concat w80 37346608 key (w16 22))
+
+ Bit :23
+ Tainted value: (Concat w80 37346608 key (w16 23))
+
+
+ Bit :24
+ Tainted value: (Concat w80 37346608 key (w16 24))
+
+ Bit :25
+ Tainted value: (Concat w80 37346608 key (w16 25))
+
+ Bit :26
+ Tainted value: (Concat w80 37346608 key (w16 26))
+
+ Bit :27
+ Tainted value: (Concat w80 37346608 key (w16 27))
+
+ Bit :28
+ Tainted value: (Concat w80 37346608 key (w16 28))
+
+ Bit :29
+ Tainted value: (Concat w80 37346608 key (w16 29))
+
+ Bit :30
+ Tainted value: (Concat w80 37346608 key (w16 30))
+
+ Bit :31
+ Tainted value: (Concat w80 37346608 key (w16 31))
+
+
+37963216Taint Details of unnamed
+
+ Bit :0
+ Tainted value: (Extract 0 (Xor w32 4294967295
+                     (ReadLSB w32 0 key)))
+
+ Bit :1
+ Tainted value: (Extract 1 (Xor w32 4294967295
+                     (ReadLSB w32 0 key)))
+
+ Bit :2
+ Tainted value: (Extract 2 (Xor w32 4294967295
+                     (ReadLSB w32 0 key)))
+
+ Bit :3
+ Tainted value: (Extract 3 (Xor w32 4294967295
+                     (ReadLSB w32 0 key)))
+
+ Bit :4
+ Tainted value: (Extract 4 (Xor w32 4294967295
+                     (ReadLSB w32 0 key)))
+
+ Bit :5
+ Tainted value: (Extract 5 (Xor w32 4294967295
+                     (ReadLSB w32 0 key)))
+
+ Bit :6
+ Tainted value: (Extract 6 (Xor w32 4294967295
+                     (ReadLSB w32 0 key)))
+
+ Bit :7
+ Tainted value: (Extract 7 (Xor w32 4294967295
+                     (ReadLSB w32 0 key)))
+
+
+ Bit :8
+ Tainted value: (Extract 8 (Xor w32 4294967295
+                     (ReadLSB w32 0 key)))
+
+ Bit :9
+ Tainted value: (Extract 9 (Xor w32 4294967295
+                     (ReadLSB w32 0 key)))
+
+ Bit :10
+ Tainted value: (Extract 10 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+ Bit :11
+ Tainted value: (Extract 11 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+ Bit :12
+ Tainted value: (Extract 12 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+ Bit :13
+ Tainted value: (Extract 13 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+ Bit :14
+ Tainted value: (Extract 14 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+ Bit :15
+ Tainted value: (Extract 15 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+
+ Bit :16
+ Tainted value: (Extract 16 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+ Bit :17
+ Tainted value: (Extract 17 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+ Bit :18
+ Tainted value: (Extract 18 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+ Bit :19
+ Tainted value: (Extract 19 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+ Bit :20
+ Tainted value: (Extract 20 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+ Bit :21
+ Tainted value: (Extract 21 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+ Bit :22
+ Tainted value: (Extract 22 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+ Bit :23
+ Tainted value: (Extract 23 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+
+ Bit :24
+ Tainted value: (Extract 24 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+ Bit :25
+ Tainted value: (Extract 25 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+ Bit :26
+ Tainted value: (Extract 26 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+ Bit :27
+ Tainted value: (Extract 27 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+ Bit :28
+ Tainted value: (Extract 28 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+ Bit :29
+ Tainted value: (Extract 29 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+ Bit :30
+ Tainted value: (Extract 30 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+ Bit :31
+ Tainted value: (Extract 31 (Xor w32 4294967295
+                      (ReadLSB w32 0 key)))
+
+State End : 0
+  %key = alloca i32, align 4
+  %clean = alloca i32, align 4
+  %1 = bitcast i32* %key to i8*
+  call void @klee_make_symbolic(i8* %1, i64 4, i8* getelementptr inbounds ([4 x i8]* @.str, i32 0, i32 0))
+  %2 = bitcast i32* %key to i8*
+  call void @klee_set_taint(i32 1, i8* %2, i64 4)
+  %3 = load i32* %key, align 4
+  store i32 %3, i32* %clean, align 4
+  %4 = load i32* %clean, align 4
+  call void @testTaintPropagate(i32 %4)
+  %1 = alloca i32, align 4
+  store i32 %i, i32* %1, align 4
+  %2 = bitcast i32* %1 to i8*
+  %3 = call i32 @klee_get_taint(i8* %2, i64 4)
+  ret void
+  %5 = load i32* %key, align 4
+  %6 = xor i32 %5, -1
+  store i32 %6, i32* %clean, align 4
+  %7 = load i32* %clean, align 4
+  call void @testTaintPropagate(i32 %7)
+  %1 = alloca i32, align 4
+  store i32 %i, i32* %1, align 4
+  %2 = bitcast i32* %1 to i8*
+  %3 = call i32 @klee_get_taint(i8* %2, i64 4)
+  ret void
+  ret i32 0
+Total Time : 60
+
+Taint Path : 
+
+State constraints:
+(query [] false)
+
+
+KLEE: done: total instructions = 26
+KLEE: done: completed paths = 1, among which
+KLEE: done:     early-terminating paths (instruction time limit, solver timeout, max-depth reached) = 0
+KLEE: done:     subsumed paths = 0
+KLEE: done:     error paths = 0
+KLEE: done:     program exit paths = 1
+KLEE: done: generated tests = 1, among which
+KLEE: done:     early-terminating tests (instruction time limit, solver timeout, max-depth reached) = 0
+KLEE: done:     subsumed tests = 0
+KLEE: done:     error tests = 0
+KLEE: done:     program exit tests = 1

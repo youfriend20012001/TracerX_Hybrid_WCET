@@ -1,0 +1,24 @@
+Executor.cpp: In member function ‘void klee::Executor::run(klee::ExecutionState&)’:
+Executor.cpp:3130:16: warning: variable ‘c_start’ set but not used [-Wunused-but-set-variable]
+   std::clock_t c_start;
+                ^
+Executor.cpp: In member function ‘klee::Executor::HSETSummary klee::Executor::runWithExecutionTree(klee::PTreeNode*, int*, int, klee::Executor::HSETAbstractMethods)’:
+Executor.cpp:3616:92: warning: second operand of conditional expression has no effect [-Wunused-value]
+   iss << resultHSET.WCET << " " << resultHSET.LWCET << " " << resultHSET.isConcrete() ? 1:0;
+                                                                                            ^
+Executor.cpp:3616:92: warning: third operand of conditional expression has no effect [-Wunused-value]
+Executor.cpp:3619:57: error: ‘resultArray’ was not declared in this scope
+     ExtractPath(guilde, depth - 1 , guilde[depth - 1]), resultArray);
+                                                         ^
+Executor.cpp: In member function ‘klee::Executor::HSETSummary klee::Executor::runWithSymbolicExecution(klee::ExecutionState&, int*, int, klee::Executor::HSETAbstractMethods, bool)’:
+Executor.cpp:5217:90: warning: second operand of conditional expression has no effect [-Wunused-value]
+   iss << resultHSET.WCET << " " << resultHSET.LWCET << " " << resultHSET.isConcrete()?1:0;
+                                                                                          ^
+Executor.cpp:5217:90: warning: third operand of conditional expression has no effect [-Wunused-value]
+Executor.cpp:5220:52: error: ‘resultArray’ was not declared in this scope
+     ExtractPath(guilde,depth -1, guilde[depth-1]), resultArray);
+                                                    ^
+/bin/rm: cannot remove ‘/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Core/Release+Asserts/Executor.d.tmp’: No such file or directory
+make[2]: *** [/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Core/Release+Asserts/Executor.o] Error 1
+make[1]: *** [Core/.makeall] Error 2
+make: *** [all] Error 1

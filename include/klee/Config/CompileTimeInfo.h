@@ -1,0 +1,3 @@
+#define KLEE_BUILD_MODE "Release+Asserts"
+#define KLEE_BUILD_REVISION "7a0f432e9f85652357efa8943fd0412c2b9e156b"
+#define KLEE_BUILD_TAG "v1.0.0-678-g7a0f432"

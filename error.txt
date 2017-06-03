@@ -1,0 +1,231 @@
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/tools/klee/Release+Asserts/main.o: In function `main':
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::SelectSolver'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleeCore.a(Executor.o): In function `klee::Executor::Executor(klee::Interpreter::InterpreterOptions const&, klee::InterpreterHandler*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Core/Executor.cpp:286: undefined reference to `klee::SelectSolver'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Core/Executor.cpp:322: undefined reference to `klee::SelectSolver'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Core/Executor.cpp:286: undefined reference to `klee::SelectSolver'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleeCore.a(Executor.o): In function `klee::Executor::terminateState(klee::ExecutionState&)':
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::SelectSolver'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleeCore.a(Executor.o):/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: more undefined references to `klee::SelectSolver' follow
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleeCore.a(Executor.o): In function `klee::Executor::runFunctionAsMain(llvm::Function*, int, char**, char**)':
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::InterpolationStat'
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::OutputTree'
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::OutputTree'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleeCore.a(ITree.o): In function `klee::SearchTree::save(std::string)':
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::SelectSolver'
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::OutputTree'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleeCore.a(ITree.o): In function `klee::SearchTree::setCurrentNode(klee::ExecutionState&, unsigned long)':
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::SelectSolver'
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::OutputTree'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleeCore.a(ITree.o): In function `klee::SearchTree::addChildren(klee::ITreeNode*, klee::ITreeNode*, klee::ITreeNode*)':
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::SelectSolver'
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::OutputTree'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleeCore.a(ITree.o): In function `klee::SearchTree::markAsSubsumed(klee::ITreeNode*, klee::SubsumptionTableEntry*)':
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::SelectSolver'
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::OutputTree'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleeCore.a(ITree.o): In function `klee::SearchTree::addTableEntryMapping(klee::ITreeNode*, klee::SubsumptionTableEntry*)':
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::SelectSolver'
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::OutputTree'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleeCore.a(ITree.o): In function `klee::SearchTree::setAsCore(klee::PathCondition*)':
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::SelectSolver'
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::OutputTree'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleeCore.a(ITree.o): In function `klee::PathCondition::packInterpolant(std::set<klee::Array const*, std::less<klee::Array const*>, std::allocator<klee::Array const*> >&)':
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::NoExistential'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleeCore.a(ITree.o): In function `klee::SearchTree::addPathCondition(klee::ITreeNode*, klee::PathCondition*, klee::ref<klee::Expr>)':
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::SelectSolver'
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::OutputTree'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleeCore.a(Memory.o): In function `klee::ObjectState::ObjectState(klee::MemoryObject const*)':
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::SelectSolver'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleeCore.a(Memory.o): In function `klee::ObjectState::getUpdates() const':
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::SelectSolver'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleeCore.a(Dependency.o): In function `klee::Dependency::getStoredExpressions(std::set<klee::Array const*, std::less<klee::Array const*>, std::allocator<klee::Array const*> >&, bool) const':
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::NoExistential'
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::NoExistential'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleeCore.a(ExecutionState.o): In function `klee::ExecutionState::addITreeConstraint(klee::ref<klee::Expr>, llvm::Instruction*)':
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::SelectSolver'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleeCore.a(ExecutionState.o): In function `klee::ExecutionState::popFrame(klee::KInstruction*, klee::ref<klee::Expr>)':
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:1137: undefined reference to `klee::SelectSolver'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Solver.o): In function `Z3SolverImpl::getConstraintLog(klee::Query const&)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:981: undefined reference to `Z3_mk_string_symbol'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:981: undefined reference to `Z3_mk_solver_for_logic'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:982: undefined reference to `Z3_solver_inc_ref'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:987: undefined reference to `Z3_solver_assert'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:989: undefined reference to `Z3_solver_to_string'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:992: undefined reference to `Z3_solver_dec_ref'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Solver.o): In function `Z3SolverImpl::getModel(klee::Z3Builder*, _Z3_solver*, std::vector<klee::Array const*, std::allocator<klee::Array const*> > const&, std::vector<std::vector<unsigned char, std::allocator<unsigned char> >, std::allocator<std::vector<unsigned char, std::allocator<unsigned char> > > >&)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1098: undefined reference to `Z3_solver_get_model'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1111: undefined reference to `Z3_mk_bv2int'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1112: undefined reference to `Z3_model_eval'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1114: undefined reference to `Z3_get_numeral_int'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Solver.o): In function `Z3SolverImpl::getUnsatCoreVector(klee::Query const&, klee::Z3Builder const*, _Z3_solver*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1158: undefined reference to `Z3_solver_get_unsat_core'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1159: undefined reference to `Z3_ast_vector_size'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1160: undefined reference to `Z3_ast_vector_get'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1167: undefined reference to `Z3_ast_to_string'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Solver.o): In function `Z3SolverImpl::runAndGetCex(klee::Query const&, klee::Z3Builder*, _Z3_solver*, _Z3_ast*, std::vector<klee::Array const*, std::allocator<klee::Array const*> > const&, std::vector<std::vector<unsigned char, std::allocator<unsigned char> >, std::allocator<std::vector<unsigned char, std::allocator<unsigned char> > > >&, bool&)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1129: undefined reference to `Z3_mk_not'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1129: undefined reference to `Z3_solver_assert'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1134: undefined reference to `Z3_solver_check'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Solver.o): In function `Z3SolverImpl::computeInitialValues(klee::Query const&, std::vector<klee::Array const*, std::allocator<klee::Array const*> > const&, std::vector<std::vector<unsigned char, std::allocator<unsigned char> >, std::allocator<std::vector<unsigned char, std::allocator<unsigned char> > > >&, bool&)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1040: undefined reference to `Z3_mk_string_symbol'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1040: undefined reference to `Z3_mk_solver_for_logic'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1041: undefined reference to `Z3_solver_inc_ref'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1044: undefined reference to `Z3_mk_params'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1045: undefined reference to `Z3_params_inc_ref'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1048: undefined reference to `Z3_mk_string_symbol'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1049: undefined reference to `Z3_params_set_uint'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1050: undefined reference to `Z3_solver_set_params'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1051: undefined reference to `Z3_params_dec_ref'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1067: undefined reference to `Z3_solver_assert_and_track'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1060: undefined reference to `Z3_mk_bool_sort'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1065: undefined reference to `Z3_mk_string_symbol'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1066: undefined reference to `Z3_mk_const'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:1083: undefined reference to `Z3_solver_dec_ref'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Solver.o): In function `Z3SolverImpl::setCoreSolverTimeout(double)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Solver.cpp:932: undefined reference to `Z3_global_param_set'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `customZ3ErrorHandler(_Z3_context*, Z3_error_code)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:64: undefined reference to `Z3_get_error_msg'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::buildVar(char const*, unsigned int)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:94: undefined reference to `Z3_mk_bv_sort'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:95: undefined reference to `Z3_mk_string_symbol'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:94: undefined reference to `Z3_mk_bool_sort'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::Z3Builder()':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:70: undefined reference to `Z3_mk_config'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:71: undefined reference to `Z3_set_param_value'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:72: undefined reference to `Z3_mk_context'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:73: undefined reference to `Z3_set_error_handler'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:74: undefined reference to `Z3_del_config'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::buildArray(char const*, unsigned int, unsigned int)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:101: undefined reference to `Z3_mk_bv_sort'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:102: undefined reference to `Z3_mk_bv_sort'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:103: undefined reference to `Z3_mk_array_sort'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:104: undefined reference to `Z3_mk_string_symbol'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvConst32(unsigned int, unsigned int)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:145: undefined reference to `Z3_mk_bv_sort'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvConst64(unsigned int, unsigned long)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:150: undefined reference to `Z3_mk_bv_sort'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvZExtConst(unsigned int, unsigned long)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:160: undefined reference to `Z3_mk_concat'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvSExtConst(unsigned int, unsigned long)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:168: undefined reference to `Z3_mk_bv_sort'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:174: undefined reference to `Z3_mk_int64'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvMinusExpr(unsigned int, _Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:274: undefined reference to `Z3_mk_bvsub'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvPlusExpr(unsigned int, _Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:278: undefined reference to `Z3_mk_bvadd'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvMultExpr(unsigned int, _Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:282: undefined reference to `Z3_mk_bvmul'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvDivExpr(unsigned int, _Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:286: undefined reference to `Z3_mk_bvudiv'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::sbvDivExpr(unsigned int, _Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:290: undefined reference to `Z3_mk_bvsdiv'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvModExpr(unsigned int, _Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:294: undefined reference to `Z3_mk_bvurem'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::sbvModExpr(unsigned int, _Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:299: undefined reference to `Z3_mk_bvsrem'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::andExpr(_Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:312: undefined reference to `Z3_mk_and'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::orExpr(_Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:321: undefined reference to `Z3_mk_or'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::iffExpr(_Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:329: undefined reference to `Z3_mk_bvnot'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:329: undefined reference to `Z3_mk_bvxor'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvSignExtend(_Z3_ast*, unsigned int)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:337: undefined reference to `Z3_get_sort'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:337: undefined reference to `Z3_get_bv_sort_size'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::getBVLength(_Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:356: undefined reference to `Z3_get_sort'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::existsExpr(_Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:378: undefined reference to `Z3_mk_exists'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::constructAShrByConstant(_Z3_ast*, unsigned int, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:393: undefined reference to `Z3_mk_concat'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::constructMulByConstant(_Z3_ast*, unsigned int, unsigned long)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:417: undefined reference to `Z3_mk_bvadd'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:423: undefined reference to `Z3_mk_bvsub'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:425: undefined reference to `Z3_mk_bvsub'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::constructUDivByConstant(_Z3_ast*, unsigned int, unsigned long)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:461: undefined reference to `Z3_mk_concat'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::~Z3Builder()':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:83: undefined reference to `Z3_del_context'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::QuantificationContext::QuantificationContext(_Z3_context*, std::set<klee::Array const*, std::less<klee::Array const*>, std::allocator<klee::Array const*> >, klee::Z3Builder::QuantificationContext*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:1058: undefined reference to `Z3_mk_string_symbol'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:1060: undefined reference to `Z3_mk_bv_sort'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:1060: undefined reference to `Z3_mk_bv_sort'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:1060: undefined reference to `Z3_mk_array_sort'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:1061: undefined reference to `Z3_mk_bound'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::constructActual(klee::ref<klee::Expr>, int*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:718: undefined reference to `Z3_mk_concat'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:691: undefined reference to `Z3_mk_concat'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:659: undefined reference to `Z3_mk_concat'
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:827: undefined reference to `Z3_mk_concat'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::buildVar(char const*, unsigned int)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:96: undefined reference to `Z3_mk_const'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::buildArray(char const*, unsigned int, unsigned int)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:105: undefined reference to `Z3_mk_const'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::getTrue()':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:122: undefined reference to `Z3_mk_true'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::getFalse()':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:129: undefined reference to `Z3_mk_false'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvConst32(unsigned int, unsigned int)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:146: undefined reference to `Z3_mk_unsigned_int'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvConst64(unsigned int, unsigned long)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:151: undefined reference to `Z3_mk_unsigned_int64'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvZExtConst(unsigned int, unsigned long)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:161: undefined reference to `Z3_mk_concat'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvSExtConst(unsigned int, unsigned long)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:175: undefined reference to `Z3_mk_concat'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvExtract(_Z3_ast*, unsigned int, unsigned int)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:183: undefined reference to `Z3_mk_extract'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvBoolExtract(_Z3_ast*, int)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:179: undefined reference to `Z3_mk_eq'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::eqExpr(_Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:187: undefined reference to `Z3_mk_eq'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvMinusExpr(unsigned int, _Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:274: undefined reference to `Z3_mk_extract'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvPlusExpr(unsigned int, _Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:278: undefined reference to `Z3_mk_extract'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvMultExpr(unsigned int, _Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:282: undefined reference to `Z3_mk_extract'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvDivExpr(unsigned int, _Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:286: undefined reference to `Z3_mk_extract'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::sbvDivExpr(unsigned int, _Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:290: undefined reference to `Z3_mk_extract'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o):/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:294: more undefined references to `Z3_mk_extract' follow
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::notExpr(_Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:303: undefined reference to `Z3_mk_not'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvNotExpr(_Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:307: undefined reference to `Z3_mk_bvnot'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvAndExpr(_Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:316: undefined reference to `Z3_mk_bvand'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvOrExpr(_Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:325: undefined reference to `Z3_mk_bvor'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::iffExpr(_Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:329: undefined reference to `Z3_mk_extract'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvXorExpr(_Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:333: undefined reference to `Z3_mk_bvxor'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvSignExtend(_Z3_ast*, unsigned int)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:340: undefined reference to `Z3_mk_sign_ext'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::writeExpr(_Z3_ast*, _Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:344: undefined reference to `Z3_mk_store'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::readExpr(_Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:348: undefined reference to `Z3_mk_select'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::iteExpr(_Z3_ast*, _Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:352: undefined reference to `Z3_mk_ite'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::getBVLength(_Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:356: undefined reference to `Z3_get_bv_sort_size'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvRightShift(_Z3_ast*, unsigned int)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:199: undefined reference to `Z3_mk_concat'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvLeftShift(_Z3_ast*, unsigned int)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:212: undefined reference to `Z3_mk_concat'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvLtExpr(_Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:360: undefined reference to `Z3_mk_bvult'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::bvLeExpr(_Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:364: undefined reference to `Z3_mk_bvule'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::sbvLtExpr(_Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:368: undefined reference to `Z3_mk_bvslt'
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/lib/libkleaverSolver.a(Z3Builder.o): In function `klee::Z3Builder::sbvLeExpr(_Z3_ast*, _Z3_ast*)':
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/lib/Solver/Z3Builder.cpp:372: undefined reference to `Z3_mk_bvsle'
+collect2: error: ld returned 1 exit status
+make[2]: *** [/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/bin/klee] Error 1
+make[1]: *** [klee/.makeall] Error 2
+make: *** [all] Error 1

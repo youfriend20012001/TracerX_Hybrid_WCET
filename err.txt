@@ -1,0 +1,24 @@
+Executor.cpp: In member function ‘void klee::Executor::run(klee::ExecutionState&)’:
+Executor.cpp:3131:16: warning: variable ‘c_start’ set but not used [-Wunused-but-set-variable]
+   std::clock_t c_start;
+                ^
+Executor.cpp: In member function ‘klee::Executor::HSETSummary klee::Executor::runWithExecutionTree(klee::PTreeNode*, std::string, int, klee::Executor::HSETAbstractMethods)’:
+Executor.cpp:3519:28: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+   if (depth >= guilde.size() || guilde[depth] == '1') {
+                            ^
+Executor.cpp: In member function ‘klee::Executor::HSETSummary klee::Executor::runWithSymbolicExecution(klee::ExecutionState&, std::string, int, klee::Executor::HSETAbstractMethods, bool)’:
+Executor.cpp:3941:32: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+       if (depth >= guilde.size() || guilde[depth] == '1') {
+                                ^
+Executor.cpp:4115:24: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+     for(int i = 0 ; i< index; i++) chosenPath +='0';
+                        ^
+Executor.cpp:4120:26: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+      for(int i = 0 ; i<= index; i++)
+                          ^
+Executor.cpp:4113:9: warning: unused variable ‘maxNumCases’ [-Wunused-variable]
+     int maxNumCases = si->getNumCases() + 1;
+         ^
+Executor.cpp:4220:38: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+       if(depth + count < guilde.size())
+                                      ^

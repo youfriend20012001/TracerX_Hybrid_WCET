@@ -1,0 +1,100 @@
+KLEE: output directory is "/home/minhtan/Dropbox/NUS/klee-eclipse/examples/get_sign/klee-out-334"
+Using STP solver backend
+Call External Functions  call void @klee_make_symbolic(i8* %2, i64 6, i8* getelementptr inbounds ([4 x i8]* @.str, i32 0, i32 0))
+Call External Functions  call void @klee_make_symbolic(i8* %3, i64 6, i8* getelementptr inbounds ([8 x i8]* @.str1, i32 0, i32 0))
+Call External Functions  %4 = call i32 (i32, [6 x i8]*, i64, ...)* bitcast (i32 (...)* @klee_set_taint to i32 (i32, [6 x i8]*, i64, ...)*)(i32 1, [6 x i8]* %key, i64 6)
+State End  : 1
+  %1 = alloca i32, align 4
+  %key = alloca [6 x i8], align 1
+  %attempt = alloca [6 x i8], align 1
+  %c = alloca i32, align 4
+  store i32 0, i32* %1
+  %2 = bitcast [6 x i8]* %key to i8*
+  call void @klee_make_symbolic(i8* %2, i64 6, i8* getelementptr inbounds ([4 x i8]* @.str, i32 0, i32 0))
+  %3 = bitcast [6 x i8]* %attempt to i8*
+  call void @klee_make_symbolic(i8* %3, i64 6, i8* getelementptr inbounds ([8 x i8]* @.str1, i32 0, i32 0))
+  %4 = call i32 (i32, [6 x i8]*, i64, ...)* bitcast (i32 (...)* @klee_set_taint to i32 (i32, [6 x i8]*, i64, ...)*)(i32 1, [6 x i8]* %key, i64 6)
+  %5 = getelementptr inbounds [6 x i8]* %attempt, i32 0, i64 0
+  %6 = load i8* %5, align 1
+  %7 = sext i8 %6 to i32
+  %8 = add nsw i32 %7, 1
+  store i32 %8, i32* %c, align 4
+  %9 = load i32* %c, align 4
+  %10 = getelementptr inbounds [6 x i8]* %key, i32 0, i64 0
+  %11 = load i8* %10, align 1
+  %12 = sext i8 %11 to i32
+  %13 = icmp sgt i32 %9, %12
+  br i1 %13, label %14, label %15
+  store i32 6, i32* %c, align 4
+  br label %16
+  %17 = load i32* %c, align 4
+  %18 = icmp eq i32 %17, 5
+  %19 = load i32* %c, align 4
+  br i1 %18, label %20, label %22
+  %23 = add nsw i32 %19, 6
+  store i32 %23, i32* %c, align 4
+  br label %24
+  %25 = load i32* %1
+  ret i32 %25
+Total Time : 73
+
+Taint Path : 
+
+State constraints :
+array key[6] : w32 -> w8 = symbolic
+array attempt[6] : w32 -> w8 = symbolic
+(query [(Eq false
+             (Slt (SExt w32 (Read w8 0 key))
+                  (Add w32 1
+                           (SExt w32 (Read w8 0 attempt)))))]
+        false)
+
+State End  : 1
+  %1 = alloca i32, align 4
+  %key = alloca [6 x i8], align 1
+  %attempt = alloca [6 x i8], align 1
+  %c = alloca i32, align 4
+  store i32 0, i32* %1
+  %2 = bitcast [6 x i8]* %key to i8*
+  call void @klee_make_symbolic(i8* %2, i64 6, i8* getelementptr inbounds ([4 x i8]* @.str, i32 0, i32 0))
+  %3 = bitcast [6 x i8]* %attempt to i8*
+  call void @klee_make_symbolic(i8* %3, i64 6, i8* getelementptr inbounds ([8 x i8]* @.str1, i32 0, i32 0))
+  %4 = call i32 (i32, [6 x i8]*, i64, ...)* bitcast (i32 (...)* @klee_set_taint to i32 (i32, [6 x i8]*, i64, ...)*)(i32 1, [6 x i8]* %key, i64 6)
+  %5 = getelementptr inbounds [6 x i8]* %attempt, i32 0, i64 0
+  %6 = load i8* %5, align 1
+  %7 = sext i8 %6 to i32
+  %8 = add nsw i32 %7, 1
+  store i32 %8, i32* %c, align 4
+  %9 = load i32* %c, align 4
+  %10 = getelementptr inbounds [6 x i8]* %key, i32 0, i64 0
+  %11 = load i8* %10, align 1
+  %12 = sext i8 %11 to i32
+  %13 = icmp sgt i32 %9, %12
+  br i1 %13, label %14, label %15
+  store i32 5, i32* %c, align 4
+  br label %16
+  %17 = load i32* %c, align 4
+  %18 = icmp eq i32 %17, 5
+  %19 = load i32* %c, align 4
+  br i1 %18, label %20, label %22
+  %21 = add nsw i32 %19, 5
+  store i32 %21, i32* %c, align 4
+  br label %24
+  %25 = load i32* %1
+  ret i32 %25
+Total Time : 73
+
+Taint Path : 
+
+State constraints :
+array key[6] : w32 -> w8 = symbolic
+array attempt[6] : w32 -> w8 = symbolic
+(query [(Slt (SExt w32 (Read w8 0 key))
+              (Add w32 1
+                       (SExt w32 (Read w8 0 attempt))))]
+        false)
+
+
+KLEE: done: total instructions = 43
+KLEE: done: completed paths = 2
+KLEE: done: generated tests = 2

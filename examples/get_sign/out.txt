@@ -1,0 +1,2104 @@
+KLEE: output directory is "/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/examples/get_sign/klee-out-229"
+Starting Z3Solver ...
+
+39973696Taint Details of attempt
+
+ Bit :0
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 0 (w16 0)))
+
+ Bit :1
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 0 (w16 1)))
+
+ Bit :2
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 0 (w16 2)))
+
+ Bit :3
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 0 (w16 3)))
+
+ Bit :4
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 0 (w16 4)))
+
+ Bit :5
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 0 (w16 5)))
+
+ Bit :6
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 0 (w16 6)))
+
+ Bit :7
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 0 (w16 7)))
+
+
+ Bit :8
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 1 (w16 0)))
+
+ Bit :9
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 1 (w16 1)))
+
+ Bit :10
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 1 (w16 2)))
+
+ Bit :11
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 1 (w16 3)))
+
+ Bit :12
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 1 (w16 4)))
+
+ Bit :13
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 1 (w16 5)))
+
+ Bit :14
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 1 (w16 6)))
+
+ Bit :15
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 1 (w16 7)))
+
+
+ Bit :16
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 2 (w16 0)))
+
+ Bit :17
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 2 (w16 1)))
+
+ Bit :18
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 2 (w16 2)))
+
+ Bit :19
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 2 (w16 3)))
+
+ Bit :20
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 2 (w16 4)))
+
+ Bit :21
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 2 (w16 5)))
+
+ Bit :22
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 2 (w16 6)))
+
+ Bit :23
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 2 (w16 7)))
+
+
+ Bit :24
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 3 (w16 0)))
+
+ Bit :25
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 3 (w16 1)))
+
+ Bit :26
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 3 (w16 2)))
+
+ Bit :27
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 3 (w16 3)))
+
+ Bit :28
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 3 (w16 4)))
+
+ Bit :29
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 3 (w16 5)))
+
+ Bit :30
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 3 (w16 6)))
+
+ Bit :31
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 3 (w16 7)))
+
+
+ Bit :32
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 4 (w16 0)))
+
+ Bit :33
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 4 (w16 1)))
+
+ Bit :34
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 4 (w16 2)))
+
+ Bit :35
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 4 (w16 3)))
+
+ Bit :36
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 4 (w16 4)))
+
+ Bit :37
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 4 (w16 5)))
+
+ Bit :38
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 4 (w16 6)))
+
+ Bit :39
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 4 (w16 7)))
+
+
+ Bit :40
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 5 (w16 0)))
+
+ Bit :41
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 5 (w16 1)))
+
+ Bit :42
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 5 (w16 2)))
+
+ Bit :43
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 5 (w16 3)))
+
+ Bit :44
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 5 (w16 4)))
+
+ Bit :45
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 5 (w16 5)))
+
+ Bit :46
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 5 (w16 6)))
+
+ Bit :47
+ Tainted value: (Concat w112 39973696 attempt (Concat w48 5 (w16 7)))
+
+
+39973696Taint Details of attempt
+
+ Bit :0
+ Tainted value: 0
+
+ Bit :1
+ Tainted value: 0
+
+ Bit :2
+ Tainted value: 0
+
+ Bit :3
+ Tainted value: 0
+
+ Bit :4
+ Tainted value: 0
+
+ Bit :5
+ Tainted value: 0
+
+ Bit :6
+ Tainted value: 0
+
+ Bit :7
+ Tainted value: 0
+
+
+ Bit :8
+ Tainted value: 0
+
+ Bit :9
+ Tainted value: 0
+
+ Bit :10
+ Tainted value: 0
+
+ Bit :11
+ Tainted value: 0
+
+ Bit :12
+ Tainted value: 0
+
+ Bit :13
+ Tainted value: 0
+
+ Bit :14
+ Tainted value: 0
+
+ Bit :15
+ Tainted value: 0
+
+
+ Bit :16
+ Tainted value: 0
+
+ Bit :17
+ Tainted value: 0
+
+ Bit :18
+ Tainted value: 0
+
+ Bit :19
+ Tainted value: 0
+
+ Bit :20
+ Tainted value: 0
+
+ Bit :21
+ Tainted value: 0
+
+ Bit :22
+ Tainted value: 0
+
+ Bit :23
+ Tainted value: 0
+
+
+ Bit :24
+ Tainted value: 0
+
+ Bit :25
+ Tainted value: 0
+
+ Bit :26
+ Tainted value: 0
+
+ Bit :27
+ Tainted value: 0
+
+ Bit :28
+ Tainted value: 0
+
+ Bit :29
+ Tainted value: 0
+
+ Bit :30
+ Tainted value: 0
+
+ Bit :31
+ Tainted value: 0
+
+
+ Bit :32
+ Tainted value: 0
+
+ Bit :33
+ Tainted value: 0
+
+ Bit :34
+ Tainted value: 0
+
+ Bit :35
+ Tainted value: 0
+
+ Bit :36
+ Tainted value: 0
+
+ Bit :37
+ Tainted value: 0
+
+ Bit :38
+ Tainted value: 0
+
+ Bit :39
+ Tainted value: 0
+
+
+ Bit :40
+ Tainted value: 0
+
+ Bit :41
+ Tainted value: 0
+
+ Bit :42
+ Tainted value: 0
+
+ Bit :43
+ Tainted value: 0
+
+ Bit :44
+ Tainted value: 0
+
+ Bit :45
+ Tainted value: 0
+
+ Bit :46
+ Tainted value: 0
+
+ Bit :47
+ Tainted value: 0
+
+State End : 1
+  %key = alloca [6 x i8], align 1
+  %attempt = alloca [6 x i8], align 1
+  %1 = bitcast [6 x i8]* %key to i8*
+  call void @klee_make_symbolic(i8* %1, i64 6, i8* getelementptr inbounds ([4 x i8]* @.str, i32 0, i32 0))
+  %2 = bitcast [6 x i8]* %attempt to i8*
+  call void @klee_make_symbolic(i8* %2, i64 6, i8* getelementptr inbounds ([8 x i8]* @.str1, i32 0, i32 0))
+  %3 = bitcast [6 x i8]* %attempt to i8*
+  call void @klee_set_taint(i32 1, i8* %3, i64 6)
+  %4 = bitcast [6 x i8]* %attempt to i8*
+  %5 = call i32 @klee_get_taint(i8* %4, i64 6)
+  %6 = getelementptr inbounds [6 x i8]* %key, i32 0, i32 0
+  %7 = getelementptr inbounds [6 x i8]* %attempt, i32 0, i32 0
+  %8 = call i32 @isEqual(i8* %6, i8* %7)
+  %1 = alloca i32, align 4
+  %2 = alloca i8*, align 8
+  %3 = alloca i8*, align 8
+  %i = alloca i32, align 4
+  store i8* %digesta, i8** %2, align 8
+  store i8* %digestb, i8** %3, align 8
+  store i32 0, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  store i32 0, i32* %1
+  br label %26
+  %27 = load i32* %1
+  ret i32 %27
+  %9 = bitcast [6 x i8]* %attempt to i8*
+  %10 = call i32 @klee_get_taint(i8* %9, i64 6)
+  ret i32 0
+Total Time : 100
+
+Taint Path : 
+
+State constraints:
+array key[6] : w32 -> w8 = symbolic
+array attempt[6] : w32 -> w8 = symbolic
+(query [(Eq false
+             (Eq (SExt w32 (Read w8 0 key))
+                 (SExt w32 (Read w8 0 attempt))))]
+        false)
+
+0 -7 7 17
+39973696Taint Details of attempt
+
+ Bit :0
+ Tainted value: 0
+
+ Bit :1
+ Tainted value: 0
+
+ Bit :2
+ Tainted value: 0
+
+ Bit :3
+ Tainted value: 0
+
+ Bit :4
+ Tainted value: 0
+
+ Bit :5
+ Tainted value: 0
+
+ Bit :6
+ Tainted value: 0
+
+ Bit :7
+ Tainted value: 0
+
+
+ Bit :8
+ Tainted value: 0
+
+ Bit :9
+ Tainted value: 0
+
+ Bit :10
+ Tainted value: 0
+
+ Bit :11
+ Tainted value: 0
+
+ Bit :12
+ Tainted value: 0
+
+ Bit :13
+ Tainted value: 0
+
+ Bit :14
+ Tainted value: 0
+
+ Bit :15
+ Tainted value: 0
+
+
+ Bit :16
+ Tainted value: 0
+
+ Bit :17
+ Tainted value: 0
+
+ Bit :18
+ Tainted value: 0
+
+ Bit :19
+ Tainted value: 0
+
+ Bit :20
+ Tainted value: 0
+
+ Bit :21
+ Tainted value: 0
+
+ Bit :22
+ Tainted value: 0
+
+ Bit :23
+ Tainted value: 0
+
+
+ Bit :24
+ Tainted value: 0
+
+ Bit :25
+ Tainted value: 0
+
+ Bit :26
+ Tainted value: 0
+
+ Bit :27
+ Tainted value: 0
+
+ Bit :28
+ Tainted value: 0
+
+ Bit :29
+ Tainted value: 0
+
+ Bit :30
+ Tainted value: 0
+
+ Bit :31
+ Tainted value: 0
+
+
+ Bit :32
+ Tainted value: 0
+
+ Bit :33
+ Tainted value: 0
+
+ Bit :34
+ Tainted value: 0
+
+ Bit :35
+ Tainted value: 0
+
+ Bit :36
+ Tainted value: 0
+
+ Bit :37
+ Tainted value: 0
+
+ Bit :38
+ Tainted value: 0
+
+ Bit :39
+ Tainted value: 0
+
+
+ Bit :40
+ Tainted value: 0
+
+ Bit :41
+ Tainted value: 0
+
+ Bit :42
+ Tainted value: 0
+
+ Bit :43
+ Tainted value: 0
+
+ Bit :44
+ Tainted value: 0
+
+ Bit :45
+ Tainted value: 0
+
+ Bit :46
+ Tainted value: 0
+
+ Bit :47
+ Tainted value: 0
+
+State End : 2
+  %key = alloca [6 x i8], align 1
+  %attempt = alloca [6 x i8], align 1
+  %1 = bitcast [6 x i8]* %key to i8*
+  call void @klee_make_symbolic(i8* %1, i64 6, i8* getelementptr inbounds ([4 x i8]* @.str, i32 0, i32 0))
+  %2 = bitcast [6 x i8]* %attempt to i8*
+  call void @klee_make_symbolic(i8* %2, i64 6, i8* getelementptr inbounds ([8 x i8]* @.str1, i32 0, i32 0))
+  %3 = bitcast [6 x i8]* %attempt to i8*
+  call void @klee_set_taint(i32 1, i8* %3, i64 6)
+  %4 = bitcast [6 x i8]* %attempt to i8*
+  %5 = call i32 @klee_get_taint(i8* %4, i64 6)
+  %6 = getelementptr inbounds [6 x i8]* %key, i32 0, i32 0
+  %7 = getelementptr inbounds [6 x i8]* %attempt, i32 0, i32 0
+  %8 = call i32 @isEqual(i8* %6, i8* %7)
+  %1 = alloca i32, align 4
+  %2 = alloca i8*, align 8
+  %3 = alloca i8*, align 8
+  %i = alloca i32, align 4
+  store i8* %digesta, i8** %2, align 8
+  store i8* %digestb, i8** %3, align 8
+  store i32 0, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  %23 = load i32* %i, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  store i32 0, i32* %1
+  br label %26
+  %27 = load i32* %1
+  ret i32 %27
+  %9 = bitcast [6 x i8]* %attempt to i8*
+  %10 = call i32 @klee_get_taint(i8* %9, i64 6)
+  ret i32 0
+Total Time : 146
+
+Taint Path : 
+
+State constraints:
+array key[6] : w32 -> w8 = symbolic
+array attempt[6] : w32 -> w8 = symbolic
+(query [(Eq (SExt w32 (Read w8 0 key))
+             (SExt w32 (Read w8 0 attempt)))
+         (Eq false
+             (Eq (SExt w32 (Read w8 1 key))
+                 (SExt w32 (Read w8 1 attempt))))]
+        false)
+
+0 -7 7 170 -7 7 17
+39973696Taint Details of attempt
+
+ Bit :0
+ Tainted value: 0
+
+ Bit :1
+ Tainted value: 0
+
+ Bit :2
+ Tainted value: 0
+
+ Bit :3
+ Tainted value: 0
+
+ Bit :4
+ Tainted value: 0
+
+ Bit :5
+ Tainted value: 0
+
+ Bit :6
+ Tainted value: 0
+
+ Bit :7
+ Tainted value: 0
+
+
+ Bit :8
+ Tainted value: 0
+
+ Bit :9
+ Tainted value: 0
+
+ Bit :10
+ Tainted value: 0
+
+ Bit :11
+ Tainted value: 0
+
+ Bit :12
+ Tainted value: 0
+
+ Bit :13
+ Tainted value: 0
+
+ Bit :14
+ Tainted value: 0
+
+ Bit :15
+ Tainted value: 0
+
+
+ Bit :16
+ Tainted value: 0
+
+ Bit :17
+ Tainted value: 0
+
+ Bit :18
+ Tainted value: 0
+
+ Bit :19
+ Tainted value: 0
+
+ Bit :20
+ Tainted value: 0
+
+ Bit :21
+ Tainted value: 0
+
+ Bit :22
+ Tainted value: 0
+
+ Bit :23
+ Tainted value: 0
+
+
+ Bit :24
+ Tainted value: 0
+
+ Bit :25
+ Tainted value: 0
+
+ Bit :26
+ Tainted value: 0
+
+ Bit :27
+ Tainted value: 0
+
+ Bit :28
+ Tainted value: 0
+
+ Bit :29
+ Tainted value: 0
+
+ Bit :30
+ Tainted value: 0
+
+ Bit :31
+ Tainted value: 0
+
+
+ Bit :32
+ Tainted value: 0
+
+ Bit :33
+ Tainted value: 0
+
+ Bit :34
+ Tainted value: 0
+
+ Bit :35
+ Tainted value: 0
+
+ Bit :36
+ Tainted value: 0
+
+ Bit :37
+ Tainted value: 0
+
+ Bit :38
+ Tainted value: 0
+
+ Bit :39
+ Tainted value: 0
+
+
+ Bit :40
+ Tainted value: 0
+
+ Bit :41
+ Tainted value: 0
+
+ Bit :42
+ Tainted value: 0
+
+ Bit :43
+ Tainted value: 0
+
+ Bit :44
+ Tainted value: 0
+
+ Bit :45
+ Tainted value: 0
+
+ Bit :46
+ Tainted value: 0
+
+ Bit :47
+ Tainted value: 0
+
+State End : 3
+  %key = alloca [6 x i8], align 1
+  %attempt = alloca [6 x i8], align 1
+  %1 = bitcast [6 x i8]* %key to i8*
+  call void @klee_make_symbolic(i8* %1, i64 6, i8* getelementptr inbounds ([4 x i8]* @.str, i32 0, i32 0))
+  %2 = bitcast [6 x i8]* %attempt to i8*
+  call void @klee_make_symbolic(i8* %2, i64 6, i8* getelementptr inbounds ([8 x i8]* @.str1, i32 0, i32 0))
+  %3 = bitcast [6 x i8]* %attempt to i8*
+  call void @klee_set_taint(i32 1, i8* %3, i64 6)
+  %4 = bitcast [6 x i8]* %attempt to i8*
+  %5 = call i32 @klee_get_taint(i8* %4, i64 6)
+  %6 = getelementptr inbounds [6 x i8]* %key, i32 0, i32 0
+  %7 = getelementptr inbounds [6 x i8]* %attempt, i32 0, i32 0
+  %8 = call i32 @isEqual(i8* %6, i8* %7)
+  %1 = alloca i32, align 4
+  %2 = alloca i8*, align 8
+  %3 = alloca i8*, align 8
+  %i = alloca i32, align 4
+  store i8* %digesta, i8** %2, align 8
+  store i8* %digestb, i8** %3, align 8
+  store i32 0, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  %23 = load i32* %i, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  %23 = load i32* %i, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  store i32 0, i32* %1
+  br label %26
+  %27 = load i32* %1
+  ret i32 %27
+  %9 = bitcast [6 x i8]* %attempt to i8*
+  %10 = call i32 @klee_get_taint(i8* %9, i64 6)
+  ret i32 0
+Total Time : 192
+
+Taint Path : 
+
+State constraints:
+array key[6] : w32 -> w8 = symbolic
+array attempt[6] : w32 -> w8 = symbolic
+(query [(Eq (SExt w32 (Read w8 0 key))
+             (SExt w32 (Read w8 0 attempt)))
+         (Eq (SExt w32 (Read w8 1 key))
+             (SExt w32 (Read w8 1 attempt)))
+         (Eq false
+             (Eq (SExt w32 (Read w8 2 key))
+                 (SExt w32 (Read w8 2 attempt))))]
+        false)
+
+Enter restructure mode 10095
+End restructure mode 200
+0 -7 7 170 -7 7 170 -7 7 17
+39973696Taint Details of attempt
+
+ Bit :0
+ Tainted value: 0
+
+ Bit :1
+ Tainted value: 0
+
+ Bit :2
+ Tainted value: 0
+
+ Bit :3
+ Tainted value: 0
+
+ Bit :4
+ Tainted value: 0
+
+ Bit :5
+ Tainted value: 0
+
+ Bit :6
+ Tainted value: 0
+
+ Bit :7
+ Tainted value: 0
+
+
+ Bit :8
+ Tainted value: 0
+
+ Bit :9
+ Tainted value: 0
+
+ Bit :10
+ Tainted value: 0
+
+ Bit :11
+ Tainted value: 0
+
+ Bit :12
+ Tainted value: 0
+
+ Bit :13
+ Tainted value: 0
+
+ Bit :14
+ Tainted value: 0
+
+ Bit :15
+ Tainted value: 0
+
+
+ Bit :16
+ Tainted value: 0
+
+ Bit :17
+ Tainted value: 0
+
+ Bit :18
+ Tainted value: 0
+
+ Bit :19
+ Tainted value: 0
+
+ Bit :20
+ Tainted value: 0
+
+ Bit :21
+ Tainted value: 0
+
+ Bit :22
+ Tainted value: 0
+
+ Bit :23
+ Tainted value: 0
+
+
+ Bit :24
+ Tainted value: 0
+
+ Bit :25
+ Tainted value: 0
+
+ Bit :26
+ Tainted value: 0
+
+ Bit :27
+ Tainted value: 0
+
+ Bit :28
+ Tainted value: 0
+
+ Bit :29
+ Tainted value: 0
+
+ Bit :30
+ Tainted value: 0
+
+ Bit :31
+ Tainted value: 0
+
+
+ Bit :32
+ Tainted value: 0
+
+ Bit :33
+ Tainted value: 0
+
+ Bit :34
+ Tainted value: 0
+
+ Bit :35
+ Tainted value: 0
+
+ Bit :36
+ Tainted value: 0
+
+ Bit :37
+ Tainted value: 0
+
+ Bit :38
+ Tainted value: 0
+
+ Bit :39
+ Tainted value: 0
+
+
+ Bit :40
+ Tainted value: 0
+
+ Bit :41
+ Tainted value: 0
+
+ Bit :42
+ Tainted value: 0
+
+ Bit :43
+ Tainted value: 0
+
+ Bit :44
+ Tainted value: 0
+
+ Bit :45
+ Tainted value: 0
+
+ Bit :46
+ Tainted value: 0
+
+ Bit :47
+ Tainted value: 0
+
+State End : 4
+  %key = alloca [6 x i8], align 1
+  %attempt = alloca [6 x i8], align 1
+  %1 = bitcast [6 x i8]* %key to i8*
+  call void @klee_make_symbolic(i8* %1, i64 6, i8* getelementptr inbounds ([4 x i8]* @.str, i32 0, i32 0))
+  %2 = bitcast [6 x i8]* %attempt to i8*
+  call void @klee_make_symbolic(i8* %2, i64 6, i8* getelementptr inbounds ([8 x i8]* @.str1, i32 0, i32 0))
+  %3 = bitcast [6 x i8]* %attempt to i8*
+  call void @klee_set_taint(i32 1, i8* %3, i64 6)
+  %4 = bitcast [6 x i8]* %attempt to i8*
+  %5 = call i32 @klee_get_taint(i8* %4, i64 6)
+  %6 = getelementptr inbounds [6 x i8]* %key, i32 0, i32 0
+  %7 = getelementptr inbounds [6 x i8]* %attempt, i32 0, i32 0
+  %8 = call i32 @isEqual(i8* %6, i8* %7)
+  %1 = alloca i32, align 4
+  %2 = alloca i8*, align 8
+  %3 = alloca i8*, align 8
+  %i = alloca i32, align 4
+  store i8* %digesta, i8** %2, align 8
+  store i8* %digestb, i8** %3, align 8
+  store i32 0, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  %23 = load i32* %i, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  %23 = load i32* %i, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  %23 = load i32* %i, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  store i32 0, i32* %1
+  br label %26
+  %27 = load i32* %1
+  ret i32 %27
+  %9 = bitcast [6 x i8]* %attempt to i8*
+  %10 = call i32 @klee_get_taint(i8* %9, i64 6)
+  ret i32 0
+Total Time : 238
+
+Taint Path : 
+
+State constraints:
+array key[6] : w32 -> w8 = symbolic
+array attempt[6] : w32 -> w8 = symbolic
+(query [(Eq (SExt w32 (Read w8 0 key))
+             (SExt w32 (Read w8 0 attempt)))
+         (Eq (SExt w32 (Read w8 1 key))
+             (SExt w32 (Read w8 1 attempt)))
+         (Eq (SExt w32 (Read w8 2 key))
+             (SExt w32 (Read w8 2 attempt)))
+         (Eq false
+             (Eq (SExt w32 (Read w8 3 key))
+                 (SExt w32 (Read w8 3 attempt))))]
+        false)
+
+0 -7 7 170 -7 7 170 -7 7 170 -7 7 17
+39973696Taint Details of attempt
+
+ Bit :0
+ Tainted value: 0
+
+ Bit :1
+ Tainted value: 0
+
+ Bit :2
+ Tainted value: 0
+
+ Bit :3
+ Tainted value: 0
+
+ Bit :4
+ Tainted value: 0
+
+ Bit :5
+ Tainted value: 0
+
+ Bit :6
+ Tainted value: 0
+
+ Bit :7
+ Tainted value: 0
+
+
+ Bit :8
+ Tainted value: 0
+
+ Bit :9
+ Tainted value: 0
+
+ Bit :10
+ Tainted value: 0
+
+ Bit :11
+ Tainted value: 0
+
+ Bit :12
+ Tainted value: 0
+
+ Bit :13
+ Tainted value: 0
+
+ Bit :14
+ Tainted value: 0
+
+ Bit :15
+ Tainted value: 0
+
+
+ Bit :16
+ Tainted value: 0
+
+ Bit :17
+ Tainted value: 0
+
+ Bit :18
+ Tainted value: 0
+
+ Bit :19
+ Tainted value: 0
+
+ Bit :20
+ Tainted value: 0
+
+ Bit :21
+ Tainted value: 0
+
+ Bit :22
+ Tainted value: 0
+
+ Bit :23
+ Tainted value: 0
+
+
+ Bit :24
+ Tainted value: 0
+
+ Bit :25
+ Tainted value: 0
+
+ Bit :26
+ Tainted value: 0
+
+ Bit :27
+ Tainted value: 0
+
+ Bit :28
+ Tainted value: 0
+
+ Bit :29
+ Tainted value: 0
+
+ Bit :30
+ Tainted value: 0
+
+ Bit :31
+ Tainted value: 0
+
+
+ Bit :32
+ Tainted value: 0
+
+ Bit :33
+ Tainted value: 0
+
+ Bit :34
+ Tainted value: 0
+
+ Bit :35
+ Tainted value: 0
+
+ Bit :36
+ Tainted value: 0
+
+ Bit :37
+ Tainted value: 0
+
+ Bit :38
+ Tainted value: 0
+
+ Bit :39
+ Tainted value: 0
+
+
+ Bit :40
+ Tainted value: 0
+
+ Bit :41
+ Tainted value: 0
+
+ Bit :42
+ Tainted value: 0
+
+ Bit :43
+ Tainted value: 0
+
+ Bit :44
+ Tainted value: 0
+
+ Bit :45
+ Tainted value: 0
+
+ Bit :46
+ Tainted value: 0
+
+ Bit :47
+ Tainted value: 0
+
+State End : 5
+  %key = alloca [6 x i8], align 1
+  %attempt = alloca [6 x i8], align 1
+  %1 = bitcast [6 x i8]* %key to i8*
+  call void @klee_make_symbolic(i8* %1, i64 6, i8* getelementptr inbounds ([4 x i8]* @.str, i32 0, i32 0))
+  %2 = bitcast [6 x i8]* %attempt to i8*
+  call void @klee_make_symbolic(i8* %2, i64 6, i8* getelementptr inbounds ([8 x i8]* @.str1, i32 0, i32 0))
+  %3 = bitcast [6 x i8]* %attempt to i8*
+  call void @klee_set_taint(i32 1, i8* %3, i64 6)
+  %4 = bitcast [6 x i8]* %attempt to i8*
+  %5 = call i32 @klee_get_taint(i8* %4, i64 6)
+  %6 = getelementptr inbounds [6 x i8]* %key, i32 0, i32 0
+  %7 = getelementptr inbounds [6 x i8]* %attempt, i32 0, i32 0
+  %8 = call i32 @isEqual(i8* %6, i8* %7)
+  %1 = alloca i32, align 4
+  %2 = alloca i8*, align 8
+  %3 = alloca i8*, align 8
+  %i = alloca i32, align 4
+  store i8* %digesta, i8** %2, align 8
+  store i8* %digestb, i8** %3, align 8
+  store i32 0, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  %23 = load i32* %i, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  %23 = load i32* %i, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  %23 = load i32* %i, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  %23 = load i32* %i, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  store i32 0, i32* %1
+  br label %26
+  %27 = load i32* %1
+  ret i32 %27
+  %9 = bitcast [6 x i8]* %attempt to i8*
+  %10 = call i32 @klee_get_taint(i8* %9, i64 6)
+  ret i32 0
+Total Time : 284
+
+Taint Path : 
+
+State constraints:
+array key[6] : w32 -> w8 = symbolic
+array attempt[6] : w32 -> w8 = symbolic
+(query [(Eq (SExt w32 (Read w8 0 key))
+             (SExt w32 (Read w8 0 attempt)))
+         (Eq (SExt w32 (Read w8 1 key))
+             (SExt w32 (Read w8 1 attempt)))
+         (Eq (SExt w32 (Read w8 2 key))
+             (SExt w32 (Read w8 2 attempt)))
+         (Eq (SExt w32 (Read w8 3 key))
+             (SExt w32 (Read w8 3 attempt)))
+         (Eq false
+             (Eq (SExt w32 (Read w8 4 key))
+                 (SExt w32 (Read w8 4 attempt))))]
+        false)
+
+0 -7 7 170 -7 7 170 -7 7 170 -7 7 170 -7 7 17
+39973696Taint Details of attempt
+
+ Bit :0
+ Tainted value: 0
+
+ Bit :1
+ Tainted value: 0
+
+ Bit :2
+ Tainted value: 0
+
+ Bit :3
+ Tainted value: 0
+
+ Bit :4
+ Tainted value: 0
+
+ Bit :5
+ Tainted value: 0
+
+ Bit :6
+ Tainted value: 0
+
+ Bit :7
+ Tainted value: 0
+
+
+ Bit :8
+ Tainted value: 0
+
+ Bit :9
+ Tainted value: 0
+
+ Bit :10
+ Tainted value: 0
+
+ Bit :11
+ Tainted value: 0
+
+ Bit :12
+ Tainted value: 0
+
+ Bit :13
+ Tainted value: 0
+
+ Bit :14
+ Tainted value: 0
+
+ Bit :15
+ Tainted value: 0
+
+
+ Bit :16
+ Tainted value: 0
+
+ Bit :17
+ Tainted value: 0
+
+ Bit :18
+ Tainted value: 0
+
+ Bit :19
+ Tainted value: 0
+
+ Bit :20
+ Tainted value: 0
+
+ Bit :21
+ Tainted value: 0
+
+ Bit :22
+ Tainted value: 0
+
+ Bit :23
+ Tainted value: 0
+
+
+ Bit :24
+ Tainted value: 0
+
+ Bit :25
+ Tainted value: 0
+
+ Bit :26
+ Tainted value: 0
+
+ Bit :27
+ Tainted value: 0
+
+ Bit :28
+ Tainted value: 0
+
+ Bit :29
+ Tainted value: 0
+
+ Bit :30
+ Tainted value: 0
+
+ Bit :31
+ Tainted value: 0
+
+
+ Bit :32
+ Tainted value: 0
+
+ Bit :33
+ Tainted value: 0
+
+ Bit :34
+ Tainted value: 0
+
+ Bit :35
+ Tainted value: 0
+
+ Bit :36
+ Tainted value: 0
+
+ Bit :37
+ Tainted value: 0
+
+ Bit :38
+ Tainted value: 0
+
+ Bit :39
+ Tainted value: 0
+
+
+ Bit :40
+ Tainted value: 0
+
+ Bit :41
+ Tainted value: 0
+
+ Bit :42
+ Tainted value: 0
+
+ Bit :43
+ Tainted value: 0
+
+ Bit :44
+ Tainted value: 0
+
+ Bit :45
+ Tainted value: 0
+
+ Bit :46
+ Tainted value: 0
+
+ Bit :47
+ Tainted value: 0
+
+State End : 6
+  %key = alloca [6 x i8], align 1
+  %attempt = alloca [6 x i8], align 1
+  %1 = bitcast [6 x i8]* %key to i8*
+  call void @klee_make_symbolic(i8* %1, i64 6, i8* getelementptr inbounds ([4 x i8]* @.str, i32 0, i32 0))
+  %2 = bitcast [6 x i8]* %attempt to i8*
+  call void @klee_make_symbolic(i8* %2, i64 6, i8* getelementptr inbounds ([8 x i8]* @.str1, i32 0, i32 0))
+  %3 = bitcast [6 x i8]* %attempt to i8*
+  call void @klee_set_taint(i32 1, i8* %3, i64 6)
+  %4 = bitcast [6 x i8]* %attempt to i8*
+  %5 = call i32 @klee_get_taint(i8* %4, i64 6)
+  %6 = getelementptr inbounds [6 x i8]* %key, i32 0, i32 0
+  %7 = getelementptr inbounds [6 x i8]* %attempt, i32 0, i32 0
+  %8 = call i32 @isEqual(i8* %6, i8* %7)
+  %1 = alloca i32, align 4
+  %2 = alloca i8*, align 8
+  %3 = alloca i8*, align 8
+  %i = alloca i32, align 4
+  store i8* %digesta, i8** %2, align 8
+  store i8* %digestb, i8** %3, align 8
+  store i32 0, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  %23 = load i32* %i, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  %23 = load i32* %i, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  %23 = load i32* %i, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  %23 = load i32* %i, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  %23 = load i32* %i, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  store i32 0, i32* %1
+  br label %26
+  %27 = load i32* %1
+  ret i32 %27
+  %9 = bitcast [6 x i8]* %attempt to i8*
+  %10 = call i32 @klee_get_taint(i8* %9, i64 6)
+  ret i32 0
+Total Time : 330
+
+Taint Path : 
+
+State constraints:
+array key[6] : w32 -> w8 = symbolic
+array attempt[6] : w32 -> w8 = symbolic
+(query [(Eq (SExt w32 (Read w8 0 key))
+             (SExt w32 (Read w8 0 attempt)))
+         (Eq (SExt w32 (Read w8 1 key))
+             (SExt w32 (Read w8 1 attempt)))
+         (Eq (SExt w32 (Read w8 2 key))
+             (SExt w32 (Read w8 2 attempt)))
+         (Eq (SExt w32 (Read w8 3 key))
+             (SExt w32 (Read w8 3 attempt)))
+         (Eq (SExt w32 (Read w8 4 key))
+             (SExt w32 (Read w8 4 attempt)))
+         (Eq false
+             (Eq (SExt w32 (Read w8 5 key))
+                 (SExt w32 (Read w8 5 attempt))))]
+        false)
+
+
+39973696Taint Details of attempt
+
+ Bit :0
+ Tainted value: 0
+
+ Bit :1
+ Tainted value: 0
+
+ Bit :2
+ Tainted value: 0
+
+ Bit :3
+ Tainted value: 0
+
+ Bit :4
+ Tainted value: 0
+
+ Bit :5
+ Tainted value: 0
+
+ Bit :6
+ Tainted value: 0
+
+ Bit :7
+ Tainted value: 0
+
+
+ Bit :8
+ Tainted value: 0
+
+ Bit :9
+ Tainted value: 0
+
+ Bit :10
+ Tainted value: 0
+
+ Bit :11
+ Tainted value: 0
+
+ Bit :12
+ Tainted value: 0
+
+ Bit :13
+ Tainted value: 0
+
+ Bit :14
+ Tainted value: 0
+
+ Bit :15
+ Tainted value: 0
+
+
+ Bit :16
+ Tainted value: 0
+
+ Bit :17
+ Tainted value: 0
+
+ Bit :18
+ Tainted value: 0
+
+ Bit :19
+ Tainted value: 0
+
+ Bit :20
+ Tainted value: 0
+
+ Bit :21
+ Tainted value: 0
+
+ Bit :22
+ Tainted value: 0
+
+ Bit :23
+ Tainted value: 0
+
+
+ Bit :24
+ Tainted value: 0
+
+ Bit :25
+ Tainted value: 0
+
+ Bit :26
+ Tainted value: 0
+
+ Bit :27
+ Tainted value: 0
+
+ Bit :28
+ Tainted value: 0
+
+ Bit :29
+ Tainted value: 0
+
+ Bit :30
+ Tainted value: 0
+
+ Bit :31
+ Tainted value: 0
+
+
+ Bit :32
+ Tainted value: 0
+
+ Bit :33
+ Tainted value: 0
+
+ Bit :34
+ Tainted value: 0
+
+ Bit :35
+ Tainted value: 0
+
+ Bit :36
+ Tainted value: 0
+
+ Bit :37
+ Tainted value: 0
+
+ Bit :38
+ Tainted value: 0
+
+ Bit :39
+ Tainted value: 0
+
+
+ Bit :40
+ Tainted value: 0
+
+ Bit :41
+ Tainted value: 0
+
+ Bit :42
+ Tainted value: 0
+
+ Bit :43
+ Tainted value: 0
+
+ Bit :44
+ Tainted value: 0
+
+ Bit :45
+ Tainted value: 0
+
+ Bit :46
+ Tainted value: 0
+
+ Bit :47
+ Tainted value: 0
+
+State End : 6
+  %key = alloca [6 x i8], align 1
+  %attempt = alloca [6 x i8], align 1
+  %1 = bitcast [6 x i8]* %key to i8*
+  call void @klee_make_symbolic(i8* %1, i64 6, i8* getelementptr inbounds ([4 x i8]* @.str, i32 0, i32 0))
+  %2 = bitcast [6 x i8]* %attempt to i8*
+  call void @klee_make_symbolic(i8* %2, i64 6, i8* getelementptr inbounds ([8 x i8]* @.str1, i32 0, i32 0))
+  %3 = bitcast [6 x i8]* %attempt to i8*
+  call void @klee_set_taint(i32 1, i8* %3, i64 6)
+  %4 = bitcast [6 x i8]* %attempt to i8*
+  %5 = call i32 @klee_get_taint(i8* %4, i64 6)
+  %6 = getelementptr inbounds [6 x i8]* %key, i32 0, i32 0
+  %7 = getelementptr inbounds [6 x i8]* %attempt, i32 0, i32 0
+  %8 = call i32 @isEqual(i8* %6, i8* %7)
+  %1 = alloca i32, align 4
+  %2 = alloca i8*, align 8
+  %3 = alloca i8*, align 8
+  %i = alloca i32, align 4
+  store i8* %digesta, i8** %2, align 8
+  store i8* %digestb, i8** %3, align 8
+  store i32 0, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  %23 = load i32* %i, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  %23 = load i32* %i, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  %23 = load i32* %i, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  %23 = load i32* %i, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  %23 = load i32* %i, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  %8 = load i32* %i, align 4
+  %9 = sext i32 %8 to i64
+  %10 = load i8** %2, align 8
+  %11 = getelementptr inbounds i8* %10, i64 %9
+  %12 = load i8* %11, align 1
+  %13 = sext i8 %12 to i32
+  %14 = load i32* %i, align 4
+  %15 = sext i32 %14 to i64
+  %16 = load i8** %3, align 8
+  %17 = getelementptr inbounds i8* %16, i64 %15
+  %18 = load i8* %17, align 1
+  %19 = sext i8 %18 to i32
+  %20 = icmp ne i32 %13, %19
+  br i1 %20, label %21, label %22
+  %23 = load i32* %i, align 4
+  %24 = add nsw i32 %23, 1
+  store i32 %24, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %25
+  store i32 1, i32* %1
+  br label %26
+  %27 = load i32* %1
+  ret i32 %27
+  %9 = bitcast [6 x i8]* %attempt to i8*
+  %10 = call i32 @klee_get_taint(i8* %9, i64 6)
+  ret i32 0
+Total Time : 346
+
+Taint Path : 
+
+State constraints:
+array key[6] : w32 -> w8 = symbolic
+array attempt[6] : w32 -> w8 = symbolic
+(query [(Eq (SExt w32 (Read w8 0 key))
+             (SExt w32 (Read w8 0 attempt)))
+         (Eq (SExt w32 (Read w8 1 key))
+             (SExt w32 (Read w8 1 attempt)))
+         (Eq (SExt w32 (Read w8 2 key))
+             (SExt w32 (Read w8 2 attempt)))
+         (Eq (SExt w32 (Read w8 3 key))
+             (SExt w32 (Read w8 3 attempt)))
+         (Eq (SExt w32 (Read w8 4 key))
+             (SExt w32 (Read w8 4 attempt)))
+         (Eq (SExt w32 (Read w8 5 key))
+             (SExt w32 (Read w8 5 attempt)))]
+        false)
+
+
+KLEE: done: total instructions = 199
+KLEE: done: completed paths = 7, among which
+KLEE: done:     early-terminating paths (instruction time limit, solver timeout, max-depth reached) = 0
+KLEE: done:     subsumed paths = 0
+KLEE: done:     error paths = 0
+KLEE: done:     program exit paths = 7
+KLEE: done: generated tests = 7, among which
+KLEE: done:     early-terminating tests (instruction time limit, solver timeout, max-depth reached) = 0
+KLEE: done:     subsumed tests = 0
+KLEE: done:     error tests = 0
+KLEE: done:     program exit tests = 7

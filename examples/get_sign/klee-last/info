@@ -1,0 +1,3 @@
+/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/Release+Asserts/bin/klee -exe-method=hybrid /home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/examples/get_sign/get_sign_HSET_4.o
+PID: 3651
+Started: 2016-12-15 15:40:42

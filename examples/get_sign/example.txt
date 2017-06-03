@@ -1,0 +1,391 @@
+KLEE: output directory is "/home/minhtan/Dropbox/NUS/Test_Merge/TracerX_Taint/examples/get_sign/klee-out-301"
+Starting Z3Solver ...
+
+37861216Taint Details of unnamed
+
+ Bit :0
+ Tainted value: (Concat w112 1 (Concat w80 37870624 attempt (w16 2)))
+
+ Bit :1
+ Tainted value: (Concat w112 1 (Concat w80 37870624 attempt (w16 3)))
+
+ Bit :2
+ Tainted value: (Concat w112 1 (Concat w80 37870624 attempt (w16 4)))
+
+ Bit :3
+ Tainted value: (Concat w112 1 (Concat w80 37870624 attempt (w16 5)))
+
+ Bit :4
+ Tainted value: (Concat w112 1 (Concat w80 37870624 attempt (w16 6)))
+
+ Bit :5
+ Tainted value: (Concat w112 1 (Concat w80 37870624 attempt (w16 7)))
+
+ Bit :6
+ Tainted value: 0
+
+ Bit :7
+ Tainted value: 0
+
+
+ Bit :8
+ Tainted value: 0
+
+ Bit :9
+ Tainted value: 0
+
+ Bit :10
+ Tainted value: 0
+
+ Bit :11
+ Tainted value: 0
+
+ Bit :12
+ Tainted value: 0
+
+ Bit :13
+ Tainted value: 0
+
+ Bit :14
+ Tainted value: 0
+
+ Bit :15
+ Tainted value: 0
+
+
+ Bit :16
+ Tainted value: 0
+
+ Bit :17
+ Tainted value: 0
+
+ Bit :18
+ Tainted value: 0
+
+ Bit :19
+ Tainted value: 0
+
+ Bit :20
+ Tainted value: 0
+
+ Bit :21
+ Tainted value: 0
+
+ Bit :22
+ Tainted value: 0
+
+ Bit :23
+ Tainted value: 0
+
+
+ Bit :24
+ Tainted value: 0
+
+ Bit :25
+ Tainted value: 0
+
+ Bit :26
+ Tainted value: 0
+
+ Bit :27
+ Tainted value: 0
+
+ Bit :28
+ Tainted value: 0
+
+ Bit :29
+ Tainted value: 0
+
+ Bit :30
+ Tainted value: 0
+
+ Bit :31
+ Tainted value: 0
+
+
+ Bit :32
+ Tainted value: 0
+
+ Bit :33
+ Tainted value: 0
+
+ Bit :34
+ Tainted value: 0
+
+ Bit :35
+ Tainted value: 0
+
+ Bit :36
+ Tainted value: 0
+
+ Bit :37
+ Tainted value: 0
+
+ Bit :38
+ Tainted value: 0
+
+ Bit :39
+ Tainted value: 0
+
+
+ Bit :40
+ Tainted value: 0
+
+ Bit :41
+ Tainted value: 0
+
+ Bit :42
+ Tainted value: 0
+
+ Bit :43
+ Tainted value: 0
+
+ Bit :44
+ Tainted value: 0
+
+ Bit :45
+ Tainted value: 0
+
+ Bit :46
+ Tainted value: 0
+
+ Bit :47
+ Tainted value: 0
+
+State End : 1
+  %key = alloca [6 x i8], align 1
+  %attempt = alloca [6 x i8], align 1
+  %cloneAttempt = alloca [6 x i8], align 1
+  %1 = bitcast [6 x i8]* %key to i8*
+  call void @klee_make_symbolic(i8* %1, i64 6, i8* getelementptr inbounds ([4 x i8]* @.str, i32 0, i32 0))
+  %2 = bitcast [6 x i8]* %attempt to i8*
+  call void @klee_make_symbolic(i8* %2, i64 6, i8* getelementptr inbounds ([8 x i8]* @.str1, i32 0, i32 0))
+  %3 = bitcast [6 x i8]* %attempt to i8*
+  call void @klee_set_taint(i32 1, i8* %3, i64 6)
+  %4 = getelementptr inbounds [6 x i8]* %attempt, i32 0, i64 0
+  %5 = load i8* %4, align 1
+  %6 = sext i8 %5 to i32
+  %int_cast_to_i64 = zext i32 2 to i64
+  call void @klee_overshift_check(i64 32, i64 %int_cast_to_i64)
+  %1 = icmp ult i64 %shift, %bitWidth
+  br i1 %1, label %3, label %2
+  ret void
+  %7 = shl i32 %6, 2
+  %8 = trunc i32 %7 to i8
+  %9 = getelementptr inbounds [6 x i8]* %cloneAttempt, i32 0, i64 0
+  store i8 %8, i8* %9, align 1
+  %10 = bitcast [6 x i8]* %cloneAttempt to i8*
+  %11 = call i32 @klee_get_taint(i8* %10, i64 6)
+  %12 = getelementptr inbounds [6 x i8]* %key, i32 0, i32 0
+  %13 = getelementptr inbounds [6 x i8]* %cloneAttempt, i32 0, i32 0
+  %14 = call i32 @isEqual(i8* %12, i8* %13)
+  %1 = alloca i32, align 4
+  %2 = alloca i8*, align 8
+  %3 = alloca i8*, align 8
+  %i = alloca i32, align 4
+  store i8* %digesta, i8** %2, align 8
+  store i8* %digestb, i8** %3, align 8
+  store i32 0, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %21
+  %8 = load i8** %2, align 8
+  %9 = getelementptr inbounds i8* %8, i64 0
+  %10 = load i8* %9, align 1
+  %11 = sext i8 %10 to i32
+  %12 = load i8** %3, align 8
+  %13 = getelementptr inbounds i8* %12, i64 0
+  %14 = load i8* %13, align 1
+  %15 = sext i8 %14 to i32
+  %16 = icmp ne i32 %11, %15
+  br i1 %16, label %17, label %18
+  store i32 0, i32* %1
+  br label %22
+  %23 = load i32* %1
+  ret i32 %23
+  ret i32 0
+Total Time : 112
+
+Taint Path : 
+
+State constraints:
+array key[6] : w32 -> w8 = symbolic
+array attempt[6] : w32 -> w8 = symbolic
+(query [(Eq false
+             (Eq (SExt w32 (Read w8 0 key))
+                 (SExt w32 (Extract w8 0 (Shl w32 (SExt w32 (Read w8 0 attempt))
+                                                  2)))))]
+        false)
+
+Enter restructure mode 10095
+End restructure mode 200
+State End : 1
+  %key = alloca [6 x i8], align 1
+  %attempt = alloca [6 x i8], align 1
+  %cloneAttempt = alloca [6 x i8], align 1
+  %1 = bitcast [6 x i8]* %key to i8*
+  call void @klee_make_symbolic(i8* %1, i64 6, i8* getelementptr inbounds ([4 x i8]* @.str, i32 0, i32 0))
+  %2 = bitcast [6 x i8]* %attempt to i8*
+  call void @klee_make_symbolic(i8* %2, i64 6, i8* getelementptr inbounds ([8 x i8]* @.str1, i32 0, i32 0))
+  %3 = bitcast [6 x i8]* %attempt to i8*
+  call void @klee_set_taint(i32 1, i8* %3, i64 6)
+  %4 = getelementptr inbounds [6 x i8]* %attempt, i32 0, i64 0
+  %5 = load i8* %4, align 1
+  %6 = sext i8 %5 to i32
+  %int_cast_to_i64 = zext i32 2 to i64
+  call void @klee_overshift_check(i64 32, i64 %int_cast_to_i64)
+  %1 = icmp ult i64 %shift, %bitWidth
+  br i1 %1, label %3, label %2
+  ret void
+  %7 = shl i32 %6, 2
+  %8 = trunc i32 %7 to i8
+  %9 = getelementptr inbounds [6 x i8]* %cloneAttempt, i32 0, i64 0
+  store i8 %8, i8* %9, align 1
+  %10 = bitcast [6 x i8]* %cloneAttempt to i8*
+  %11 = call i32 @klee_get_taint(i8* %10, i64 6)
+  %12 = getelementptr inbounds [6 x i8]* %key, i32 0, i32 0
+  %13 = getelementptr inbounds [6 x i8]* %cloneAttempt, i32 0, i32 0
+  %14 = call i32 @isEqual(i8* %12, i8* %13)
+  %1 = alloca i32, align 4
+  %2 = alloca i8*, align 8
+  %3 = alloca i8*, align 8
+  %i = alloca i32, align 4
+  store i8* %digesta, i8** %2, align 8
+  store i8* %digestb, i8** %3, align 8
+  store i32 0, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %21
+  %8 = load i8** %2, align 8
+  %9 = getelementptr inbounds i8* %8, i64 0
+  %10 = load i8* %9, align 1
+  %11 = sext i8 %10 to i32
+  %12 = load i8** %3, align 8
+  %13 = getelementptr inbounds i8* %12, i64 0
+  %14 = load i8* %13, align 1
+  %15 = sext i8 %14 to i32
+  %16 = icmp ne i32 %11, %15
+  br i1 %16, label %17, label %18
+  %19 = load i32* %i, align 4
+  %20 = add nsw i32 %19, 1
+  store i32 %20, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %21
+  %8 = load i8** %2, align 8
+  %9 = getelementptr inbounds i8* %8, i64 0
+  %10 = load i8* %9, align 1
+  %11 = sext i8 %10 to i32
+  %12 = load i8** %3, align 8
+  %13 = getelementptr inbounds i8* %12, i64 0
+  %14 = load i8* %13, align 1
+  %15 = sext i8 %14 to i32
+  %16 = icmp ne i32 %11, %15
+  br i1 %16, label %17, label %18
+  %19 = load i32* %i, align 4
+  %20 = add nsw i32 %19, 1
+  store i32 %20, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %21
+  %8 = load i8** %2, align 8
+  %9 = getelementptr inbounds i8* %8, i64 0
+  %10 = load i8* %9, align 1
+  %11 = sext i8 %10 to i32
+  %12 = load i8** %3, align 8
+  %13 = getelementptr inbounds i8* %12, i64 0
+  %14 = load i8* %13, align 1
+  %15 = sext i8 %14 to i32
+  %16 = icmp ne i32 %11, %15
+  br i1 %16, label %17, label %18
+  %19 = load i32* %i, align 4
+  %20 = add nsw i32 %19, 1
+  store i32 %20, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %21
+  %8 = load i8** %2, align 8
+  %9 = getelementptr inbounds i8* %8, i64 0
+  %10 = load i8* %9, align 1
+  %11 = sext i8 %10 to i32
+  %12 = load i8** %3, align 8
+  %13 = getelementptr inbounds i8* %12, i64 0
+  %14 = load i8* %13, align 1
+  %15 = sext i8 %14 to i32
+  %16 = icmp ne i32 %11, %15
+  br i1 %16, label %17, label %18
+  %19 = load i32* %i, align 4
+  %20 = add nsw i32 %19, 1
+  store i32 %20, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %21
+  %8 = load i8** %2, align 8
+  %9 = getelementptr inbounds i8* %8, i64 0
+  %10 = load i8* %9, align 1
+  %11 = sext i8 %10 to i32
+  %12 = load i8** %3, align 8
+  %13 = getelementptr inbounds i8* %12, i64 0
+  %14 = load i8* %13, align 1
+  %15 = sext i8 %14 to i32
+  %16 = icmp ne i32 %11, %15
+  br i1 %16, label %17, label %18
+  %19 = load i32* %i, align 4
+  %20 = add nsw i32 %19, 1
+  store i32 %20, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %21
+  %8 = load i8** %2, align 8
+  %9 = getelementptr inbounds i8* %8, i64 0
+  %10 = load i8* %9, align 1
+  %11 = sext i8 %10 to i32
+  %12 = load i8** %3, align 8
+  %13 = getelementptr inbounds i8* %12, i64 0
+  %14 = load i8* %13, align 1
+  %15 = sext i8 %14 to i32
+  %16 = icmp ne i32 %11, %15
+  br i1 %16, label %17, label %18
+  %19 = load i32* %i, align 4
+  %20 = add nsw i32 %19, 1
+  store i32 %20, i32* %i, align 4
+  br label %4
+  %5 = load i32* %i, align 4
+  %6 = icmp slt i32 %5, 6
+  br i1 %6, label %7, label %21
+  store i32 1, i32* %1
+  br label %22
+  %23 = load i32* %1
+  ret i32 %23
+  ret i32 0
+Total Time : 318
+
+Taint Path : 
+
+State constraints:
+array key[6] : w32 -> w8 = symbolic
+array attempt[6] : w32 -> w8 = symbolic
+(query [(Eq (SExt w32 (Read w8 0 key))
+             (SExt w32 (Extract w8 0 (Shl w32 (SExt w32 (Read w8 0 attempt))
+                                              2))))]
+        false)
+
+
+KLEE: done: total instructions = 149
+KLEE: done: completed paths = 2, among which
+KLEE: done:     early-terminating paths (instruction time limit, solver timeout, max-depth reached) = 0
+KLEE: done:     subsumed paths = 0
+KLEE: done:     error paths = 0
+KLEE: done:     program exit paths = 2
+KLEE: done: generated tests = 2, among which
+KLEE: done:     early-terminating tests (instruction time limit, solver timeout, max-depth reached) = 0
+KLEE: done:     subsumed tests = 0
+KLEE: done:     error tests = 0
+KLEE: done:     program exit tests = 2
