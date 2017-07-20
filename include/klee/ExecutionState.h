@@ -39,7 +39,7 @@ struct KFunction;
 struct KInstruction;
 class MemoryObject;
 class PTreeNode;
-class ITreeNode;
+class TxTreeNode;
 struct InstructionInfo;
 
 llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const MemoryMap &mm);
@@ -86,7 +86,7 @@ private:
 
   std::map<std::string, std::string> fnAliases;
 
-  void addITreeConstraint(ref<Expr> e, llvm::Instruction *instr);
+  void addTxTreeConstraint(ref<Expr> e, llvm::Instruction *instr);
 
 public:
   // Execution - Control Flow specific
@@ -150,7 +150,7 @@ public:
   PTreeNode *ptreeNode;
 
   /// @brief Pointer to the interpolation tree of the current state
-  ITreeNode *itreeNode;
+  TxTreeNode *txTreeNode;
 
   /// @brief Ordered list of symbolics: used to generate test cases.
   //
@@ -182,14 +182,14 @@ public:
   unsigned splitCount;
   unsigned depthCount;
 private:
-  ExecutionState() : ptreeNode(0), itreeNode(0) ,taint(0), startPCDest(0), nInstruction(0), splitCount(0), depthCount(0){}
+  ExecutionState() : ptreeNode(0), txTreeNode(0) ,taint(0), startPCDest(0), nInstruction(0), splitCount(0), depthCount(0){}
 
 public:
   ExecutionState(KFunction *kf);
 
 // XXX total hack, just used to make a state so solver can
 // use on structure
-#ifdef SUPPORT_Z3
+#ifdef ENABLE_Z3
   ExecutionState(const KInstIterator &srcPrevPC,
                  const std::vector<ref<Expr> > &assumptions);
 #else
@@ -215,15 +215,18 @@ public:
 
   void addSymbolic(const MemoryObject *mo, const Array *array);
   void addConstraint(ref<Expr> e) {
-#ifdef SUPPORT_Z3
-    addITreeConstraint(e, prevPC->inst);
+#ifdef ENABLE_Z3
+    addTxTreeConstraint(e, prevPC->inst);
 #endif
     constraints.addConstraint(e);
   }
 
   bool merge(const ExecutionState &b);
   void dumpStack(llvm::raw_ostream &out) const;
-
+  void debugSubsumption(uint64_t level);
+  void debugSubsumptionOff();
+  void debugState(uint64_t level);
+  void debugStateOff();
   //taint related..
   TaintSet getPCTaint();
   void setPCTaint(TaintSet new_taint);

@@ -15,14 +15,15 @@
 #include "Memory.h"
 #include "MemoryManager.h"
 #include "PTree.h"
-#include "ITree.h"
 #include "Searcher.h"
 #include "SeedInfo.h"
+#include "ShadowArray.h"
 #include "SpecialFunctionHandler.h"
 #include "StatsTracker.h"
 #include "TimingSolver.h"
 #include "UserSearcher.h"
 #include "ExecutorTimerInfo.h"
+#include "TxPrintUtil.h"
 
 #include "klee/ExecutionState.h"
 #include "klee/Expr.h"
@@ -47,6 +48,7 @@
 #include "klee/Internal/System/Time.h"
 #include "klee/Internal/System/MemoryUsage.h"
 #include "klee/SolverStats.h"
+#include "TxTree.h"
 
 #if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
 #include "llvm/IR/Function.h"
@@ -89,6 +91,10 @@
 #include "llvm/Support/CallSite.h"
 #else
 #include "llvm/IR/CallSite.h"
+#endif
+
+#ifdef HAVE_ZLIB_H
+#include "klee/Internal/Support/CompressionStream.h"
 #endif
 
 #include <cassert>
@@ -146,25 +152,67 @@ cl::opt<bool> AllowExternalSymCalls("allow-external-sym-calls", cl::init(false),
 		cl::desc(
 				"Allow calls with symbolic arguments to external functions.  This concretizes the symbolic arguments.  (default=off)"));
 
-cl::opt<bool> DebugPrintInstructions("debug-print-instructions",
-		cl::desc("Print instructions during execution."));
+/// The different query logging solvers that can switched on/off
+enum PrintDebugInstructionsType {
+	STDERR_ALL, ///
+	STDERR_SRC,
+	STDERR_COMPACT,
+	FILE_ALL,    ///
+	FILE_SRC,    ///
+	FILE_COMPACT ///
+};
+
+llvm::cl::list<PrintDebugInstructionsType> DebugPrintInstructions(
+		"debug-print-instructions",
+		llvm::cl::desc("Log instructions during execution."),
+		llvm::cl::values(
+				clEnumValN(STDERR_ALL, "all:stderr",
+						"Log all instructions to stderr "
+								"in format [src, inst_id, "
+								"llvm_inst]"),
+				clEnumValN(STDERR_SRC, "src:stderr",
+						"Log all instructions to stderr in format [src, inst_id]"),
+				clEnumValN(STDERR_COMPACT, "compact:stderr",
+						"Log all instructions to stderr in format [inst_id]"),
+				clEnumValN(FILE_ALL, "all:file", "Log all instructions to file "
+						"instructions.txt in format [src, "
+						"inst_id, llvm_inst]"),
+				clEnumValN(FILE_SRC, "src:file", "Log all instructions to file "
+						"instructions.txt in format [src, "
+						"inst_id]"),
+				clEnumValN(FILE_COMPACT, "compact:file",
+						"Log all instructions to file instructions.txt in format "
+								"[inst_id]"), clEnumValEnd),
+		llvm::cl::CommaSeparated);
+#ifdef HAVE_ZLIB_H
+cl::opt<bool> DebugCompressInstructions(
+		"debug-compress-instructions", cl::init(false),
+		cl::desc("Compress the logged instructions in gzip format."));
+#endif
 
 cl::opt<bool> DebugCheckForImpliedValues("debug-check-for-implied-values");
 
-cl::opt<bool> SimplifySymIndices("simplify-sym-indices", cl::init(false));
+cl::opt<bool> SimplifySymIndices("simplify-sym-indices", cl::init(false),
+		cl::desc("Simplify symbolic accesses using equalities "
+				"from other constraints (default=off)"));
 
 cl::opt<bool> EqualitySubstitution("equality-substitution", cl::init(true),
-		cl::desc(
-				"Simplify equality expressions before querying the solver (default=on)."));
+		cl::desc("Simplify equality expressions before querying "
+				"the solver (default=on)."));
 
 cl::opt<unsigned> MaxSymArraySize("max-sym-array-size", cl::init(0));
 
-cl::opt<bool> SuppressExternalWarnings("suppress-external-warnings");
+cl::opt<bool> SuppressExternalWarnings("suppress-external-warnings",
+		cl::init(false),
+		cl::desc("Supress warnings about calling external functions."));
 
-cl::opt<bool> AllExternalWarnings("all-external-warnings");
+cl::opt<bool> AllExternalWarnings("all-external-warnings", cl::init(false),
+		cl::desc("Issue an warning everytime an external call is made,"
+				"as opposed to once per function (default=off)"));
 
 cl::opt<bool> OnlyOutputStatesCoveringNew("only-output-states-covering-new",
-		cl::init(false), cl::desc("Only output test cases covering new code."));
+		cl::init(false),
+		cl::desc("Only output test cases covering new code (default=off)."));
 
 cl::opt<bool> EmitAllErrors("emit-all-errors", cl::init(false),
 		cl::desc("Generate tests cases for all errors "
@@ -175,29 +223,38 @@ cl::opt<bool> NoExternals("no-externals",
 
 cl::opt<bool> AlwaysOutputSeeds("always-output-seeds", cl::init(true));
 
-cl::opt<bool> OnlyReplaySeeds("only-replay-seeds",
-		cl::desc("Discard states that do not have a seed."));
+cl::opt<bool> OnlyReplaySeeds("only-replay-seeds", cl::init(false),
+		cl::desc("Discard states that do not have a seed (default=off)."));
 
-cl::opt<bool> OnlySeed("only-seed",
+cl::opt<bool> OnlySeed("only-seed", cl::init(false),
+		cl::desc("Stop execution after seeding is done without doing "
+				"regular search (default=off)."));
+
+cl::opt<bool> AllowSeedExtension("allow-seed-extension", cl::init(false),
+		cl::desc("Allow extra (unbound) values to become symbolic "
+				"during seeding (default=false)."));
+
+cl::opt<bool> ZeroSeedExtension("zero-seed-extension", cl::init(false),
+		cl::desc("(default=off)"));
+
+cl::opt<bool> AllowSeedTruncation("allow-seed-truncation", cl::init(false),
+		cl::desc("Allow smaller buffers than in seeds (default=off)."));
+
+cl::opt<bool> NamedSeedMatching("named-seed-matching", cl::init(false),
 		cl::desc(
-				"Stop execution after seeding is done without doing regular search."));
+				"Use names to match symbolic objects to inputs (default=off)."));
 
-cl::opt<bool> AllowSeedExtension("allow-seed-extension",
-		cl::desc(
-				"Allow extra (unbound) values to become symbolic during seeding."));
+cl::opt<double> MaxStaticForkPct("max-static-fork-pct", cl::init(1.),
+		cl::desc("(default=1.0)"));
 
-cl::opt<bool> ZeroSeedExtension("zero-seed-extension");
+cl::opt<double> MaxStaticSolvePct("max-static-solve-pct", cl::init(1.),
+		cl::desc("(default=1.0)"));
 
-cl::opt<bool> AllowSeedTruncation("allow-seed-truncation",
-		cl::desc("Allow smaller buffers than in seeds."));
+cl::opt<double> MaxStaticCPForkPct("max-static-cpfork-pct", cl::init(1.),
+		cl::desc("(default=1.0)"));
 
-cl::opt<bool> NamedSeedMatching("named-seed-matching",
-		cl::desc("Use names to match symbolic objects to inputs."));
-
-cl::opt<double> MaxStaticForkPct("max-static-fork-pct", cl::init(1.));
-cl::opt<double> MaxStaticSolvePct("max-static-solve-pct", cl::init(1.));
-cl::opt<double> MaxStaticCPForkPct("max-static-cpfork-pct", cl::init(1.));
-cl::opt<double> MaxStaticCPSolvePct("max-static-cpsolve-pct", cl::init(1.));
+cl::opt<double> MaxStaticCPSolvePct("max-static-cpsolve-pct", cl::init(1.),
+		cl::desc("(default=1.0)"));
 
 cl::opt<double> MaxInstructionTime("max-instruction-time",
 		cl::desc(
@@ -208,6 +265,30 @@ cl::opt<double> SeedTime("seed-time",
 		cl::desc(
 				"Amount of time to dedicate to seeds, before normal search (default=0 (off))"),
 		cl::init(0));
+
+cl::list<Executor::TerminateReason> ExitOnErrorType("exit-on-error-type",
+		cl::desc("Stop execution after reaching a "
+				"specified condition.  (default=off)"),
+		cl::values(clEnumValN(Executor::Abort, "Abort", "The program crashed"),
+				clEnumValN(Executor::Assert, "Assert", "An assertion was hit"),
+				clEnumValN(Executor::Exec, "Exec",
+						"Trying to execute an unexpected instruction"),
+				clEnumValN(Executor::External, "External",
+						"External objects referenced"),
+				clEnumValN(Executor::Free, "Free", "Freeing invalid memory"),
+				clEnumValN(Executor::Model, "Model", "Memory model limit hit"),
+				clEnumValN(Executor::Overflow, "Overflow",
+						"An overflow occurred"),
+				clEnumValN(Executor::Ptr, "Ptr", "Pointer error"),
+				clEnumValN(Executor::ReadOnly, "ReadOnly",
+						"Write to read-only memory"),
+				clEnumValN(Executor::ReportError, "ReportError",
+						"klee_report_error called"),
+				clEnumValN(Executor::User, "User",
+						"Wrong klee_* functions invocation"),
+				clEnumValN(Executor::Unhandled, "Unhandled",
+						"Unhandled instruction hit"), clEnumValEnd),
+		cl::ZeroOrMore);
 
 cl::opt<unsigned int> StopAfterNInstructions("stop-after-n-instructions",
 		cl::desc(
@@ -237,76 +318,29 @@ namespace klee {
 RNG theRNG;
 }
 
+const char *Executor::TerminateReasonNames[] = { [Abort] = "abort", [Assert
+		] = "assert", [Exec] = "exec", [External] = "external", [Free] = "free",
+		[Model] = "model", [Overflow] = "overflow", [Ptr] = "ptr", [ReadOnly
+				] = "readonly", [ReportError] = "reporterror", [User] = "user",
+		[Unhandled] = "xxx", };
+
 Executor::Executor(const InterpreterOptions &opts, InterpreterHandler *ih) :
 		Interpreter(opts), kmodule(0), interpreterHandler(ih), searcher(0), externalDispatcher(
 				new ExternalDispatcher()), statsTracker(0), pathWriter(0), symPathWriter(
-				0), specialFunctionHandler(0), processTree(0), interpTree(0), replayOut(
+				0), specialFunctionHandler(0), processTree(0), txTree(0), replayKTest(
 				0), replayPath(0), usingSeeds(0), atMemoryLimit(false), inhibitForking(
 				false), haltExecution(false), ivcEnabled(false), coreSolverTimeout(
 				MaxCoreSolverTime != 0 && MaxInstructionTime != 0 ?
 						std::min(MaxCoreSolverTime, MaxInstructionTime) :
-						std::max(MaxCoreSolverTime, MaxInstructionTime)) {
+						std::max(MaxCoreSolverTime, MaxInstructionTime)), debugInstFile(
+				0), debugLogBuffer(debugBufferString) {
 
 	if (coreSolverTimeout)
 		UseForkedCoreSolver = true;
-
-	Solver *coreSolver = NULL;
-
-#ifdef SUPPORT_METASMT
-	if (UseMetaSMT != METASMT_BACKEND_NONE) {
-
-		std::string backend;
-
-		switch (UseMetaSMT) {
-			case METASMT_BACKEND_STP:
-			backend = "STP";
-			coreSolver = new MetaSMTSolver< DirectSolver_Context < STP_Backend > >(UseForkedCoreSolver, CoreSolverOptimizeDivides);
-			break;
-			case METASMT_BACKEND_Z3:
-			backend = "Z3";
-			coreSolver = new MetaSMTSolver< DirectSolver_Context < Z3_Backend > >(UseForkedCoreSolver, CoreSolverOptimizeDivides);
-			break;
-			case METASMT_BACKEND_BOOLECTOR:
-			backend = "Boolector";
-			coreSolver = new MetaSMTSolver< DirectSolver_Context < Boolector > >(UseForkedCoreSolver, CoreSolverOptimizeDivides);
-			break;
-			default:
-			assert(false);
-			break;
-		};
-		llvm::errs() << "Starting MetaSMTSolver(" << backend << ") ...\n";
+	Solver *coreSolver = klee::createCoreSolver(CoreSolverToUse);
+	if (!coreSolver) {
+		klee_error("Failed to create core solver\n");
 	}
-	else {
-		coreSolver = new STPSolver(UseForkedCoreSolver, CoreSolverOptimizeDivides);
-		llvm::errs() << "Starting STPSolver ...\n";
-	}
-#elif SUPPORT_STP
-
-#ifdef SUPPORT_Z3
-	switch (SelectSolver) {
-	case SOLVER_STP:
-		coreSolver = new STPSolver(UseForkedCoreSolver,
-				CoreSolverOptimizeDivides);
-		llvm::errs() << "Starting STPSolver ...\n";
-		break;
-	case SOLVER_Z3:
-		coreSolver = new Z3Solver();
-		llvm::errs() << "Starting Z3Solver ...\n";
-		break;
-	default:
-		assert(false);
-		break;
-	};
-#else
-	coreSolver = new STPSolver(UseForkedCoreSolver, CoreSolverOptimizeDivides);
-	llvm::errs() << "Starting STPSolver ...\n";
-#endif /* SUPPORT_Z3 */
-
-#elif SUPPORT_Z3
-	coreSolver = new Z3Solver();
-	llvm::errs() << "Starting Z3Solver ...\n";
-#endif /* SUPPORT_METASMT */
-
 	Solver *solver = constructSolverChain(coreSolver,
 			interpreterHandler->getOutputFilename(ALL_QUERIES_SMT2_FILE_NAME),
 			interpreterHandler->getOutputFilename(
@@ -314,28 +348,38 @@ Executor::Executor(const InterpreterOptions &opts, InterpreterHandler *ih) :
 			interpreterHandler->getOutputFilename(ALL_QUERIES_PC_FILE_NAME),
 			interpreterHandler->getOutputFilename(SOLVER_QUERIES_PC_FILE_NAME));
 
-#ifdef SUPPORT_Z3
-	// In case interpolation is enabled with Z3 solver,
-	// we should not simplify the constraints before
-	// submitting them to the solver.
-#ifdef SUPPORT_STP
-	if (SelectSolver == SOLVER_Z3) {
-		this->solver = new TimingSolver(solver,
-				NoInterpolation ? EqualitySubstitution : false);
-	} else {
-		this->solver = new TimingSolver(solver, EqualitySubstitution);
-	}
-#else
-	this->solver = new TimingSolver(solver, NoInterpolation? EqualitySubstitution : false);
-#endif /* SUPPORT_STP */
-
-#else
 	this->solver = new TimingSolver(solver, EqualitySubstitution);
-#endif /* SUPPORT_Z3 */
-
 	memory = new MemoryManager(&arrayCache);
-	TaintInitializer = 0;
 
+	if (optionIsSet(DebugPrintInstructions, FILE_ALL)
+			|| optionIsSet(DebugPrintInstructions, FILE_COMPACT)
+			|| optionIsSet(DebugPrintInstructions, FILE_SRC)) {
+		std::string debug_file_name = interpreterHandler->getOutputFilename(
+				"instructions.txt");
+		std::string ErrorInfo;
+#ifdef HAVE_ZLIB_H
+		if (!DebugCompressInstructions) {
+#endif
+
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 5)
+		debugInstFile = new llvm::raw_fd_ostream(
+				debug_file_name.c_str(), ErrorInfo, llvm::sys::fs::OpenFlags::F_Text),
+#else
+		debugInstFile = new llvm::raw_fd_ostream(debug_file_name.c_str(),
+				ErrorInfo);
+#endif
+#ifdef HAVE_ZLIB_H
+	} else {
+		debugInstFile = new compressed_fd_ostream(
+				(debug_file_name + ".gz").c_str(), ErrorInfo);
+	}
+#endif
+		if (ErrorInfo != "") {
+			klee_error("Could not open file %s : %s", debug_file_name.c_str(),
+					ErrorInfo.c_str());
+		}
+	}
+	TaintInitializer = 0;
 	/*HSET*/
 	//HSETInfo = new HSETGeneralInfo();
 	AbstractMethods = NONE;
@@ -362,7 +406,7 @@ const Module *Executor::setModule(llvm::Module *module,
 	kmodule->prepare(opts, interpreterHandler);
 	specialFunctionHandler->bind();
 
-	if (StatsTracker::useStatistics()) {
+	if (StatsTracker::useStatistics() || userSearcherRequiresMD2U()) {
 		statsTracker = new StatsTracker(*this,
 				interpreterHandler->getOutputFilename("assembly.ll"),
 				userSearcherRequiresMD2U());
@@ -385,6 +429,9 @@ Executor::~Executor() {
 	while (!timers.empty()) {
 		delete timers.back();
 		timers.pop_back();
+	}
+	if (debugInstFile) {
+		delete debugInstFile;
 	}
 }
 
@@ -529,7 +576,13 @@ void Executor::initializeGlobals(ExecutionState &state) {
 			// hack where we check the object file information.
 
 			LLVM_TYPE_Q Type *ty = i->getType()->getElementType();
-			uint64_t size = kmodule->targetData->getTypeStoreSize(ty);
+			uint64_t size = 0;
+			if (ty->isSized()) {
+				size = kmodule->targetData->getTypeStoreSize(ty);
+			} else {
+				klee_warning("Type for %.*s is not sized",
+						(int) i->getName().size(), i->getName().data());
+			}
 
 			// XXX - DWD - hardcode some things until we decide how to fix.
 #ifndef WINDOWS
@@ -545,9 +598,10 @@ void Executor::initializeGlobals(ExecutionState &state) {
 #endif
 
 			if (size == 0) {
-				llvm::errs() << "Unable to find size for global variable: "
-						<< i->getName()
-						<< " (use will result in out of bounds access)\n";
+				klee_warning(
+						"Unable to find size for global variable: %.*s (use will "
+								"result in out of bounds access)",
+						(int) i->getName().size(), i->getName().data());
 			}
 
 			MemoryObject *mo = memory->allocate(size, false, true, i);
@@ -591,7 +645,7 @@ void Executor::initializeGlobals(ExecutionState &state) {
 	for (Module::alias_iterator i = m->alias_begin(), ie = m->alias_end();
 			i != ie; ++i) {
 		// Map the alias to its aliasee's address. This works because we have
-		// addresses for everything, even undefined functions.
+		// addresses for everything, even undefined functions. 
 		globalAddresses.insert(
 				std::make_pair(i, evalConstant(i->getAliasee())));
 	}
@@ -638,7 +692,7 @@ void Executor::branch(ExecutionState &state,
 			//ExecutionState *es = result[theRNG.getInt32() % i];
 			ExecutionState *es = result[i];
 			ExecutionState *ns = es->branch();
-			addedStates.insert(ns);
+			addedStates.push_back(ns);
 			result.push_back(ns);
 			//TanNguyen keep ptreeNode data
 			es->ptreeNode->data = 0;
@@ -648,10 +702,10 @@ void Executor::branch(ExecutionState &state,
 			es->ptreeNode = res.second;
 
 			if (INTERPOLATION_ENABLED) {
-				std::pair<ITreeNode *, ITreeNode *> ires = interpTree->split(
-						es->itreeNode, ns, es);
-				ns->itreeNode = ires.first;
-				es->itreeNode = ires.second;
+				std::pair<TxTreeNode *, TxTreeNode *> ires = txTree->split(
+						es->txTreeNode, ns, es);
+				ns->txTreeNode = ires.first;
+				es->txTreeNode = ires.second;
 			}
 		}
 	}
@@ -781,7 +835,7 @@ Executor::StatePair Executor::fork(ExecutionState &current, ref<Expr> condition,
 			}
 		} else if (res == Solver::Unknown) {
 			assert(
-					!replayOut
+					!replayKTest
 							&& "in replay mode, only one branch can be true.");
 
 			if ((MaxMemoryInhibit && atMemoryLimit) || current.forkDisabled
@@ -860,16 +914,7 @@ Executor::StatePair Executor::fork(ExecutionState &current, ref<Expr> condition,
 			// Validity proof succeeded of a query: antecedent -> consequent.
 			// We then extract the unsatisfiability core of antecedent and not
 			// consequent as the Craig interpolant.
-			interpTree->markPathCondition(current, solver);
-		}
-
-		if (!isInternal) {
-			if (interpreterOpts.ExeConfig != Interpreter::SymbolicExecution) {
-				current.ptreeNode->data = 0;
-				std::pair<PTree::Node*, PTree::Node*> res = processTree->split(
-						current.ptreeNode, 0, &current);
-				current.ptreeNode = res.second;
-			}
+			txTree->markPathCondition(current, solver);
 		}
 
 		return StatePair(&current, 0);
@@ -884,7 +929,7 @@ Executor::StatePair Executor::fork(ExecutionState &current, ref<Expr> condition,
 			// Falsity proof succeeded of a query: antecedent -> consequent,
 			// which means that antecedent -> not(consequent) is valid. In this
 			// case also we extract the unsat core of the proof
-			interpTree->markPathCondition(current, solver);
+			txTree->markPathCondition(current, solver);
 		}
 		if (!isInternal) {
 			if (interpreterOpts.ExeConfig != Interpreter::SymbolicExecution) {
@@ -902,7 +947,7 @@ Executor::StatePair Executor::fork(ExecutionState &current, ref<Expr> condition,
 		++stats::forks;
 
 		falseState = trueState->branch();
-		addedStates.insert(falseState);
+		addedStates.push_back(falseState);
 
 		if (RandomizeFork && theRNG.getBool())
 			std::swap(trueState, falseState);
@@ -963,10 +1008,10 @@ Executor::StatePair Executor::fork(ExecutionState &current, ref<Expr> condition,
 		}
 
 		if (INTERPOLATION_ENABLED) {
-			std::pair<ITreeNode *, ITreeNode *> ires = interpTree->split(
-					current.itreeNode, falseState, trueState);
-			falseState->itreeNode = ires.first;
-			trueState->itreeNode = ires.second;
+			std::pair<TxTreeNode *, TxTreeNode *> ires = txTree->split(
+					current.txTreeNode, falseState, trueState);
+			falseState->txTreeNode = ires.first;
+			trueState->txTreeNode = ires.second;
 		}
 
 		addConstraint(*trueState, condition);
@@ -1176,7 +1221,7 @@ void Executor::executeGetValue(ExecutionState &state, ref<Expr> e,
 		bindLocal(target, state, value);
 
 		if (INTERPOLATION_ENABLED) {
-			interpTree->execute(target->inst, e, value);
+			txTree->execute(target->inst, e, value);
 		}
 	} else {
 		std::set<ref<Expr> > values;
@@ -1208,19 +1253,48 @@ void Executor::executeGetValue(ExecutionState &state, ref<Expr> e,
 				std::vector<ref<Expr> > args;
 				args.push_back(e);
 				args.push_back(*vit);
-				ITree::executeOnNode(es->itreeNode, target->inst, args);
+				TxTree::executeOnNode(es->txTreeNode, target->inst, args);
 			}
 			++bit;
 		}
 	}
 }
 
-void Executor::stepInstruction(ExecutionState &state) {
-	if (DebugPrintInstructions && HSETInfo.IsTurnOnNotification) {
-		printFileLine(state, state.pc);
-		llvm::errs().indent(10) << stats::instructions << " ";
-		llvm::errs() << *(state.pc->inst) << '\n';
+void Executor::printDebugInstructions(ExecutionState &state) {
+	// check do not print
+	if (DebugPrintInstructions.size() == 0)
+		return;
+
+	llvm::raw_ostream *stream = 0;
+	if (optionIsSet(DebugPrintInstructions, STDERR_ALL)
+			|| optionIsSet(DebugPrintInstructions, STDERR_SRC)
+			|| optionIsSet(DebugPrintInstructions, STDERR_COMPACT))
+		stream = &llvm::errs();
+	else
+		stream = &debugLogBuffer;
+
+	if (!optionIsSet(DebugPrintInstructions, STDERR_COMPACT)
+			&& !optionIsSet(DebugPrintInstructions, FILE_COMPACT))
+		printFileLine(state, state.pc, *stream);
+
+	(*stream) << state.pc->info->id;
+
+	if (optionIsSet(DebugPrintInstructions, STDERR_ALL)
+			|| optionIsSet(DebugPrintInstructions, FILE_ALL))
+		(*stream) << ":" << *(state.pc->inst);
+	(*stream) << "\n";
+
+	if (optionIsSet(DebugPrintInstructions, FILE_ALL)
+			|| optionIsSet(DebugPrintInstructions, FILE_COMPACT)
+			|| optionIsSet(DebugPrintInstructions, FILE_SRC)) {
+		debugLogBuffer.flush();
+		(*debugInstFile) << debugLogBuffer.str();
+		debugBufferString = "";
 	}
+}
+
+void Executor::stepInstruction(ExecutionState &state) {
+	printDebugInstructions(state);
 
 	if (state.pathSpecialCount == (state.maxSpecialCount - 5)) {
 
@@ -1267,9 +1341,10 @@ void Executor::executeCall(ExecutionState &state, KInstruction *ki, Function *f,
 			// ExecutionState::varargs
 		case Intrinsic::vastart: {
 			StackFrame &sf = state.stack.back();
-			assert(
-					sf.varargs
-							&& "vastart called in function with no vararg object");
+
+			// varargs can be zero if no varargs were provided
+			if (!sf.varargs)
+				return;
 
 			// FIXME: This is really specific to the architecture, not the pointer
 			// size. This happens to work fir x86-32 and x86-64, however.
@@ -1329,7 +1404,8 @@ void Executor::executeCall(ExecutionState &state, KInstruction *ki, Function *f,
 		//Tan, fix different between pc step before and after executioninstruction of traditional and hybrid
 		if (interpreterOpts.ExeConfig == Interpreter::SymbolicExecution)
 			state.pushFrame(state.prevPC, kf);
-		else state.pushFrame(state.pc, kf);
+		else
+			state.pushFrame(state.pc, kf);
 		state.pc = kf->instructions;
 
 		if (statsTracker)
@@ -1347,7 +1423,7 @@ void Executor::executeCall(ExecutionState &state, KInstruction *ki, Function *f,
 						f->getName().data());
 			} else if (callingArgs < funcArgs) {
 				terminateStateOnError(state,
-						"calling function with too few arguments", "user.err");
+						"calling function with too few arguments", User);
 				return;
 			}
 		} else {
@@ -1355,15 +1431,16 @@ void Executor::executeCall(ExecutionState &state, KInstruction *ki, Function *f,
 
 			if (callingArgs < funcArgs) {
 				terminateStateOnError(state,
-						"calling function with too few arguments", "user.err");
+						"calling function with too few arguments", User);
 				return;
 			}
 
 			StackFrame &sf = state.stack.back();
 			unsigned size = 0;
+			bool requires16ByteAlignment = false;
 			for (unsigned i = funcArgs; i < callingArgs; i++) {
 				// FIXME: This is really specific to the architecture, not the pointer
-				// size. This happens to work fir x86-32 and x86-64, however.
+				// size. This happens to work for x86-32 and x86-64, however.
 				if (WordSize == Expr::Int32) {
 					size += Expr::getMinBytesForWidth(
 							arguments[i].first->getWidth());
@@ -1375,68 +1452,74 @@ void Executor::executeCall(ExecutionState &state, KInstruction *ki, Function *f,
 					// Alignment requirements for scalar types is the same as their size
 					if (argWidth > Expr::Int64) {
 						size = llvm::RoundUpToAlignment(size, 16);
+						requires16ByteAlignment = true;
 					}
 					size += llvm::RoundUpToAlignment(argWidth, WordSize) / 8;
 				}
 			}
 
 			MemoryObject *mo = sf.varargs = memory->allocate(size, true, false,
-					state.prevPC->inst);
-			if (!mo) {
+					state.prevPC->inst, (requires16ByteAlignment ? 16 : 8));
+			if (!mo && size) {
 				terminateStateOnExecError(state, "out of memory (varargs)");
 				return;
 			}
 
-			if ((WordSize == Expr::Int64) && (mo->address & 15)) {
-				// Both 64bit Linux/Glibc and 64bit MacOSX should align to 16 bytes.
-				klee_warning_once(0,
-						"While allocating varargs: malloc did not align to 16 bytes.");
-			}
+			if (mo) {
+				if ((WordSize == Expr::Int64) && (mo->address & 15)
+						&& requires16ByteAlignment) {
+					// Both 64bit Linux/Glibc and 64bit MacOSX should align to 16 bytes.
+					klee_warning_once(0,
+							"While allocating varargs: malloc did not align to 16 bytes.");
+				}
 
-			ObjectState *os = bindObjectInState(state, mo, true);
-			unsigned offset = 0;
-			for (unsigned i = funcArgs; i < callingArgs; i++) {
-				// FIXME: This is really specific to the architecture, not the pointer
-				// size. This happens to work fir x86-32 and x86-64, however.
-				if (WordSize == Expr::Int32) {
-					os->write(offset, arguments[i].first);
-					for (unsigned j = 0; j < arguments[i].first->getWidth() / 8;
-							j++)
-						os->writeByteTaint(offset + j, arguments[i].second);
-					offset += Expr::getMinBytesForWidth(
-							arguments[i].first->getWidth());
-				} else {
-					assert(WordSize == Expr::Int64 && "Unknown word size!");
+				ObjectState *os = bindObjectInState(state, mo, true);
+				unsigned offset = 0;
+				for (unsigned i = funcArgs; i < callingArgs; i++) {
+					// FIXME: This is really specific to the architecture, not the pointer
+					// size. This happens to work fir x86-32 and x86-64, however.
+					if (WordSize == Expr::Int32) {
+						os->write(offset, arguments[i].first);
+						for (unsigned j = 0;
+								j < arguments[i].first->getWidth() / 8; j++)
+							os->writeByteTaint(offset + j, arguments[i].second);
+						offset += Expr::getMinBytesForWidth(
+								arguments[i].first->getWidth());
+					} else {
+						assert(WordSize == Expr::Int64 && "Unknown word size!");
 
-					Expr::Width argWidth = arguments[i].first->getWidth();
-					if (argWidth > Expr::Int64) {
-						offset = llvm::RoundUpToAlignment(offset, 16);
+						Expr::Width argWidth = arguments[i].first->getWidth();
+						if (argWidth > Expr::Int64) {
+							offset = llvm::RoundUpToAlignment(offset, 16);
+						}
+						os->write(offset, arguments[i].first);
+						for (unsigned j = 0;
+								j < arguments[i].first->getWidth() / 8; j++)
+							os->writeByteTaint(offset + j, arguments[i].second);
+						offset += llvm::RoundUpToAlignment(argWidth, WordSize)
+								/ 8;
 					}
-					os->write(offset, arguments[i].first);
-					for (unsigned j = 0; j < arguments[i].first->getWidth() / 8;
-							j++)
-						os->writeByteTaint(offset + j, arguments[i].second);
-					offset += llvm::RoundUpToAlignment(argWidth, WordSize) / 8;
 				}
 			}
-		}
 
-		unsigned numFormals = f->arg_size();
-		for (unsigned i = 0; i < numFormals; ++i)
-			bindArgument(kf, i, state, arguments[i].first, arguments[i].second);
+			unsigned numFormals = f->arg_size();
+			for (unsigned i = 0; i < numFormals; ++i)
+				bindArgument(kf, i, state, arguments[i].first,
+						arguments[i].second);
 
-		if (INTERPOLATION_ENABLED) {
-			std::vector<ref<Expr> > argumentExprMembers;
-			argumentExprMembers.reserve(numFormals);
-			for (unsigned j = 0; j < numFormals; ++j)
-				argumentExprMembers.push_back(arguments[j].first);
-			// We bind the abstract dependency call arguments
-			state.itreeNode->bindCallArguments(state.prevPC->inst,
-					argumentExprMembers);
+			if (INTERPOLATION_ENABLED) {
+				std::vector<ref<Expr> > filterArgs;
+				for (unsigned i = 0; i < callingArgs; i++) {
+					filterArgs.push_back(arguments[i].first);
+				}
+
+				// We bind the abstract dependency call arguments
+				state.txTreeNode->bindCallArguments(state.prevPC->inst,
+						filterArgs);
+			}
 		}
 	}
 }
-
 void Executor::transferToBasicBlock(BasicBlock *dst, BasicBlock *src,
 		ExecutionState &state) {
 	// Note that in general phi nodes can reuse phi values from the same
@@ -1461,17 +1544,19 @@ void Executor::transferToBasicBlock(BasicBlock *dst, BasicBlock *src,
 	}
 }
 
-void Executor::printFileLine(ExecutionState &state, KInstruction *ki) {
+void Executor::printFileLine(ExecutionState &state, KInstruction *ki,
+		llvm::raw_ostream &debugFile) {
 	const InstructionInfo &ii = *ki->info;
 	if (ii.file != "")
-		llvm::errs() << "     " << ii.file << ":" << ii.line << ":";
+		debugFile << "     " << ii.file << ":" << ii.line << ":";
 	else
-		llvm::errs() << "     [no debug info]:";
+		debugFile << "     [no debug info]:";
 }
 
 /// Compute the true target of a function call, resolving LLVM and KLEE aliases
 /// and bitcasts.
-Function* Executor::getTargetFunction(Value *calledVal, ExecutionState &state) {
+Function * Executor::getTargetFunction(Value * calledVal,
+		ExecutionState & state) {
 	SmallPtrSet<const GlobalValue*, 3> Visited;
 
 	Constant *c = dyn_cast < Constant > (calledVal);
@@ -1489,9 +1574,8 @@ Function* Executor::getTargetFunction(Value *calledVal, ExecutionState &state) {
 				GlobalValue *old_gv = gv;
 				gv = currModule->getNamedValue(alias);
 				if (!gv) {
-					llvm::errs() << "Function " << alias << "(), alias for "
-							<< old_gv->getName() << " not found!\n";
-					assert(0 && "function alias not found");
+					klee_error("Function %s(), alias for %s not found!\n",
+							alias.c_str(), old_gv->getName().str().c_str());
 				}
 			}
 
@@ -1546,7 +1630,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				state.leaveRegion();
 	}
 	if (HSETInfo.IsTurnOnNotification)
-				llvm::errs() << *i << "\n";
+		llvm::errs() << *i << "\n";
 	switch (i->getOpcode()) {
 	// Control flow
 	case Instruction::Ret: {
@@ -1643,7 +1727,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 				}
 			}
 			if (INTERPOLATION_ENABLED)
-			interpTree->execute(i);
+			txTree->execute(i);
 			break;
 		}
 #endif
@@ -1652,7 +1736,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 		if (bi->isUnconditional()) {
 			transferToBasicBlock(bi->getSuccessor(0), bi->getParent(), state);
 			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i);
+				txTree->execute(i);
 		} else {
 			// FIXME: Find a way that we don't have this hidden dependency.
 			assert(
@@ -1719,7 +1803,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 			if (INTERPOLATION_ENABLED
 					&& ((!branches.first && branches.second)
 							|| (branches.first && !branches.second)))
-				interpTree->execute(i);
+				txTree->execute(i);
 		}
 		break;
 	}
@@ -1766,63 +1850,115 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 			transferToBasicBlock(si->getSuccessor(index), si->getParent(),
 					state);
 		} else {
-			std::map<BasicBlock*, ref<Expr> > targets;
-			ref<Expr> isDefault = ConstantExpr::alloc(1, Expr::Bool);
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 1)      
+			// Handle possible different branch targets
+
+			// We have the following assumptions:
+			// - each case value is mutual exclusive to all other values including the
+			//   default value
+			// - order of case branches is based on the order of the expressions of
+			//   the scase values, still default is handled last
+			std::vector<BasicBlock *> bbOrder;
+			std::map<BasicBlock *, ref<Expr> > branchTargets;
+
+			std::map<ref<Expr>, BasicBlock *> expressionOrder;
+
+// Iterate through all non-default cases and order them by expressions
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 1)
 			for (SwitchInst::CaseIt i = si->case_begin(), e = si->case_end();
 					i != e; ++i) {
 				ref<Expr> value = evalConstant(i.getCaseValue());
 #else
-				for (unsigned i=1, cases = si->getNumCases(); i<cases; ++i) {
+				for (unsigned i = 1, cases = si->getNumCases(); i < cases; ++i) {
 					ref<Expr> value = evalConstant(si->getCaseValue(i));
 #endif
-				ref<Expr> match = EqExpr::create(cond, value);
-				isDefault = AndExpr::create(isDefault,
+
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 1)
+				BasicBlock *caseSuccessor = i.getCaseSuccessor();
+#else
+				BasicBlock *caseSuccessor = si->getSuccessor(i);
+#endif
+				expressionOrder.insert(std::make_pair(value, caseSuccessor));
+			}
+
+			// Track default branch values
+			ref<Expr> defaultValue = ConstantExpr::alloc(1, Expr::Bool);
+
+			// iterate through all non-default cases but in order of the expressions
+			for (std::map<ref<Expr>, BasicBlock *>::iterator it =
+					expressionOrder.begin(), itE = expressionOrder.end();
+					it != itE; ++it) {
+				ref<Expr> match = EqExpr::create(cond, it->first);
+
+				// Make sure that the default value does not contain this target's value
+				defaultValue = AndExpr::create(defaultValue,
 						Expr::createIsZero(match));
+
+				// Check if control flow could take this case
 				bool result;
 				bool success = solver->mayBeTrue(state, match, result);
 				assert(success && "FIXME: Unhandled solver failure");
 				(void) success;
 				if (result) {
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 1)
-					BasicBlock *caseSuccessor = i.getCaseSuccessor();
-#else
-					BasicBlock *caseSuccessor = si->getSuccessor(i);
-#endif
-					std::map<BasicBlock*, ref<Expr> >::iterator it =
-							targets.insert(
-									std::make_pair(caseSuccessor,
-											ConstantExpr::alloc(0, Expr::Bool))).first;
+					BasicBlock *caseSuccessor = it->second;
 
-					it->second = OrExpr::create(match, it->second);
+					// Handle the case that a basic block might be the target of multiple
+					// switch cases.
+					// Currently we generate an expression containing all switch-case
+					// values for the same target basic block. We spare us forking too
+					// many times but we generate more complex condition expressions
+					// TODO Add option to allow to choose between those behaviors
+					std::pair<std::map<BasicBlock *, ref<Expr> >::iterator, bool> res =
+							branchTargets.insert(
+									std::make_pair(caseSuccessor,
+											ConstantExpr::alloc(0,
+													Expr::Bool)));
+
+					res.first->second = OrExpr::create(match,
+							res.first->second);
+
+					// Only add basic blocks which have not been target of a branch yet
+					if (res.second) {
+						bbOrder.push_back(caseSuccessor);
+					}
 				}
 			}
+
+			// Check if control could take the default case
 			bool res;
-			bool success = solver->mayBeTrue(state, isDefault, res);
+			bool success = solver->mayBeTrue(state, defaultValue, res);
 			assert(success && "FIXME: Unhandled solver failure");
 			(void) success;
-			if (res)
-				targets.insert(std::make_pair(si->getDefaultDest(), isDefault));
+			if (res) {
+				std::pair<std::map<BasicBlock *, ref<Expr> >::iterator, bool> ret =
+						branchTargets.insert(
+								std::make_pair(si->getDefaultDest(),
+										defaultValue));
+				if (ret.second) {
+					bbOrder.push_back(si->getDefaultDest());
+				}
+			}
 
+			// Fork the current state with each state having one of the possible
+			// successors of this switch
 			std::vector<ref<Expr> > conditions;
-			for (std::map<BasicBlock*, ref<Expr> >::iterator it =
-					targets.begin(), ie = targets.end(); it != ie; ++it)
-				conditions.push_back(it->second);
-
+			for (std::vector<BasicBlock *>::iterator it = bbOrder.begin(), ie =
+					bbOrder.end(); it != ie; ++it) {
+				conditions.push_back(branchTargets[*it]);
+			}
 			std::vector<ExecutionState*> branches;
 			branch(state, conditions, branches);
 
 			std::vector<ExecutionState*>::iterator bit = branches.begin();
-			for (std::map<BasicBlock*, ref<Expr> >::iterator it =
-					targets.begin(), ie = targets.end(); it != ie; ++it) {
+			for (std::vector<BasicBlock *>::iterator it = bbOrder.begin(), ie =
+					bbOrder.end(); it != ie; ++it) {
 				ExecutionState *es = *bit;
 				if (es)
-					transferToBasicBlock(it->first, bb, *es);
+					transferToBasicBlock(*it, bb, *es);
 				++bit;
 			}
 		}
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i);
+			txTree->execute(i);
 		break;
 	}
 	case Instruction::Unreachable:
@@ -1956,9 +2092,9 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 		// Update dependency
 		if (INTERPOLATION_ENABLED) {
 #if LLVM_VERSION_CODE >= LLVM_VERSION(3, 0)
-			interpTree->executePHI(i, state.incomingBBIndex, result.value);
+			txTree->executePHI(i, state.incomingBBIndex, result.value);
 #else
-			interpTree->executePHI(i, state.incomingBBIndex * 2, result.value);
+			txTree->executePHI(i, state.incomingBBIndex * 2, result.value);
 #endif
 		}
 
@@ -1976,7 +2112,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, tExpr.value, fExpr.value);
+			txTree->execute(i, result, tExpr.value, fExpr.value);
 		break;
 	}
 
@@ -1994,7 +2130,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, left.value, right.value);
+			txTree->execute(i, result, left.value, right.value);
 		break;
 	}
 
@@ -2006,7 +2142,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, left.value, right.value);
+			txTree->execute(i, result, left.value, right.value);
 		break;
 	}
 
@@ -2018,7 +2154,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, left.value, right.value);
+			txTree->execute(i, result, left.value, right.value);
 		break;
 	}
 
@@ -2030,7 +2166,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, left.value, right.value);
+			txTree->execute(i, result, left.value, right.value);
 		break;
 	}
 
@@ -2042,7 +2178,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, left.value, right.value);
+			txTree->execute(i, result, left.value, right.value);
 		break;
 	}
 
@@ -2054,7 +2190,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, left.value, right.value);
+			txTree->execute(i, result, left.value, right.value);
 		break;
 	}
 
@@ -2066,7 +2202,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, left.value, right.value);
+			txTree->execute(i, result, left.value, right.value);
 		break;
 	}
 
@@ -2078,7 +2214,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, left.value, right.value);
+			txTree->execute(i, result, left.value, right.value);
 		break;
 	}
 
@@ -2090,7 +2226,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, left.value, right.value);
+			txTree->execute(i, result, left.value, right.value);
 		break;
 	}
 
@@ -2102,7 +2238,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, left.value, right.value);
+			txTree->execute(i, result, left.value, right.value);
 		break;
 	}
 
@@ -2114,7 +2250,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, left.value, right.value);
+			txTree->execute(i, result, left.value, right.value);
 		break;
 	}
 
@@ -2126,7 +2262,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, left.value, right.value);
+			txTree->execute(i, result, left.value, right.value);
 		break;
 	}
 
@@ -2138,7 +2274,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, left.value, right.value);
+			txTree->execute(i, result, left.value, right.value);
 		break;
 	}
 
@@ -2210,7 +2346,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, left.value, right.value);
+			txTree->execute(i, result, left.value, right.value);
 		break;
 	}
 
@@ -2246,29 +2382,39 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 		KGEPInstruction *kgepi = static_cast<KGEPInstruction*>(ki);
 		Cell base = eval(ki, 0, state);
 		TaintSet taint = base.taint;
-		ref<Expr> result = base.value;
+		ref<Expr> address(base.value);
+		ref<Expr> offset(Expr::createPointer(0));
 
-		ref<Expr> oldResult = result;
 		for (std::vector<std::pair<unsigned, uint64_t> >::iterator it =
 				kgepi->indices.begin(), ie = kgepi->indices.end(); it != ie;
 				++it) {
 			uint64_t elementSize = it->second;
 
 			Cell index = eval(ki, it->first, state);
-			result = AddExpr::create(result,
+			address = AddExpr::create(address,
 					MulExpr::create(Expr::createSExtToPointerWidth(index.value),
 							Expr::createPointer(elementSize)));
 			taint |= index.taint;
+			if (INTERPOLATION_ENABLED) {
+				offset = AddExpr::create(offset,
+						MulExpr::create(
+								Expr::createSExtToPointerWidth(index.value),
+								Expr::createPointer(elementSize)));
+			}
 		}
-		if (kgepi->offset)
-			result = AddExpr::create(result,
+		if (kgepi->offset) {
+			address = AddExpr::create(address,
 					Expr::createPointer(kgepi->offset));
-
-		bindLocal(ki, state, result, taint);
+			if (INTERPOLATION_ENABLED) {
+				offset = AddExpr::create(offset,
+						Expr::createPointer(kgepi->offset));
+			}
+		}
+		bindLocal(ki, state, address, taint);
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, oldResult);
+			txTree->execute(i, address, base.value, offset);
 		break;
 	}
 
@@ -2282,7 +2428,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result);
+			txTree->execute(i, result, arg.value);
 		break;
 	}
 	case Instruction::ZExt: {
@@ -2294,7 +2440,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result);
+			txTree->execute(i, result, arg.value);
 		break;
 	}
 	case Instruction::SExt: {
@@ -2306,7 +2452,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result);
+			txTree->execute(i, result, arg.value);
 		break;
 	}
 
@@ -2319,7 +2465,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result);
+			txTree->execute(i, result, arg.value);
 		break;
 	}
 	case Instruction::PtrToInt: {
@@ -2331,7 +2477,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result);
+			txTree->execute(i, result, arg.value);
 		break;
 	}
 
@@ -2341,7 +2487,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result.value);
+			txTree->execute(i, result.value);
 		break;
 	}
 
@@ -2373,7 +2519,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, left, right);
+			txTree->execute(i, result, left, right);
 		break;
 	}
 
@@ -2402,7 +2548,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, left, right);
+			txTree->execute(i, result, left, right);
 		break;
 	}
 
@@ -2432,7 +2578,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, left, right);
+			txTree->execute(i, result, left, right);
 		break;
 	}
 
@@ -2462,7 +2608,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, left, right);
+			txTree->execute(i, result, left, right);
 		break;
 	}
 
@@ -2491,15 +2637,15 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, left, right);
+			txTree->execute(i, result, left, right);
 		break;
 	}
 
 	case Instruction::FPTrunc: {
 		FPTruncInst *fi = cast < FPTruncInst > (i);
 		Expr::Width resultType = getWidthForLLVMType(fi->getType());
-		ref<ConstantExpr> arg = toConstant(state, eval(ki, 0, state).value,
-				"floating point");
+		ref<Expr> origArg = eval(ki, 0, state).value;
+		ref<ConstantExpr> arg = toConstant(state, origArg, "floating point");
 		if (!fpWidthToSemantics(arg->getWidth())
 				|| resultType > arg->getWidth())
 			return terminateStateOnExecError(state,
@@ -2519,15 +2665,15 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result);
+			txTree->execute(i, result, origArg);
 		break;
 	}
 
 	case Instruction::FPExt: {
 		FPExtInst *fi = cast < FPExtInst > (i);
 		Expr::Width resultType = getWidthForLLVMType(fi->getType());
-		ref<ConstantExpr> arg = toConstant(state, eval(ki, 0, state).value,
-				"floating point");
+		ref<Expr> origArg = eval(ki, 0, state).value;
+		ref<ConstantExpr> arg = toConstant(state, origArg, "floating point");
 		if (!fpWidthToSemantics(arg->getWidth())
 				|| arg->getWidth() > resultType)
 			return terminateStateOnExecError(state,
@@ -2546,15 +2692,15 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result);
+			txTree->execute(i, result, origArg);
 		break;
 	}
 
 	case Instruction::FPToUI: {
 		FPToUIInst *fi = cast < FPToUIInst > (i);
 		Expr::Width resultType = getWidthForLLVMType(fi->getType());
-		ref<ConstantExpr> arg = toConstant(state, eval(ki, 0, state).value,
-				"floating point");
+		ref<Expr> origArg = eval(ki, 0, state).value;
+		ref<ConstantExpr> arg = toConstant(state, origArg, "floating point");
 		if (!fpWidthToSemantics(arg->getWidth()) || resultType > 64)
 			return terminateStateOnExecError(state,
 					"Unsupported FPToUI operation");
@@ -2574,15 +2720,15 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result);
+			txTree->execute(i, result, origArg);
 		break;
 	}
 
 	case Instruction::FPToSI: {
 		FPToSIInst *fi = cast < FPToSIInst > (i);
 		Expr::Width resultType = getWidthForLLVMType(fi->getType());
-		ref<ConstantExpr> arg = toConstant(state, eval(ki, 0, state).value,
-				"floating point");
+		ref<Expr> origArg = eval(ki, 0, state).value;
+		ref<ConstantExpr> arg = toConstant(state, origArg, "floating point");
 		if (!fpWidthToSemantics(arg->getWidth()) || resultType > 64)
 			return terminateStateOnExecError(state,
 					"Unsupported FPToSI operation");
@@ -2602,15 +2748,15 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result);
+			txTree->execute(i, result, origArg);
 		break;
 	}
 
 	case Instruction::UIToFP: {
 		UIToFPInst *fi = cast < UIToFPInst > (i);
 		Expr::Width resultType = getWidthForLLVMType(fi->getType());
-		ref<ConstantExpr> arg = toConstant(state, eval(ki, 0, state).value,
-				"floating point");
+		ref<Expr> origArg = eval(ki, 0, state).value;
+		ref<ConstantExpr> arg = toConstant(state, origArg, "floating point");
 		const llvm::fltSemantics *semantics = fpWidthToSemantics(resultType);
 		if (!semantics)
 			return terminateStateOnExecError(state,
@@ -2624,15 +2770,15 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result);
+			txTree->execute(i, result, origArg);
 		break;
 	}
 
 	case Instruction::SIToFP: {
 		SIToFPInst *fi = cast < SIToFPInst > (i);
 		Expr::Width resultType = getWidthForLLVMType(fi->getType());
-		ref<ConstantExpr> arg = toConstant(state, eval(ki, 0, state).value,
-				"floating point");
+		ref<Expr> origArg = eval(ki, 0, state).value;
+		ref<ConstantExpr> arg = toConstant(state, origArg, "floating point");
 		const llvm::fltSemantics *semantics = fpWidthToSemantics(resultType);
 		if (!semantics)
 			return terminateStateOnExecError(state,
@@ -2646,7 +2792,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result);
+			txTree->execute(i, result, origArg);
 		break;
 	}
 
@@ -2756,7 +2902,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, left, right);
+			txTree->execute(i, result, left, right);
 		break;
 	}
 	case Instruction::InsertValue: {
@@ -2789,7 +2935,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result, agg, val);
+			txTree->execute(i, result, agg, val);
 		break;
 	}
 	case Instruction::ExtractValue: {
@@ -2804,9 +2950,15 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 
 		// Update dependency
 		if (INTERPOLATION_ENABLED)
-			interpTree->execute(i, result);
+			txTree->execute(i, result, agg.value);
 		break;
 	}
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
+	case Instruction::Fence: {
+		// Ignore for now
+		break;
+	}
+#endif
 
 		// Other instructions...
 		// Unhandled
@@ -2814,7 +2966,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 	case Instruction::InsertElement:
 	case Instruction::ShuffleVector:
 		terminateStateOnError(state, "XXX vector instructions unhandled",
-				"xxx.err");
+				Unhandled);
 		break;
 
 	default:
@@ -2826,7 +2978,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
 void Executor::updateStates(ExecutionState *current) {
 
 	// Clone pathSpecial Info
-	for (std::set<ExecutionState*>::iterator it = addedStates.begin(), ie =
+	for (std::vector<ExecutionState*>::iterator it = addedStates.begin(), ie =
 			addedStates.end(); it != ie; ++it) {
 		ExecutionState *es = *it;
 		es->pathSpecial = new KInstIterator[current->maxSpecialCount];
@@ -2845,8 +2997,8 @@ void Executor::updateStates(ExecutionState *current) {
 	states.insert(addedStates.begin(), addedStates.end());
 	addedStates.clear();
 
-	for (std::set<ExecutionState*>::iterator it = removedStates.begin(), ie =
-			removedStates.end(); it != ie; ++it) {
+	for (std::vector<ExecutionState *>::iterator it = removedStates.begin(),
+			ie = removedStates.end(); it != ie; ++it) {
 		ExecutionState *es = *it;
 		std::set<ExecutionState*>::iterator it2 = states.find(es);
 		assert(it2 != states.end());
@@ -2857,7 +3009,7 @@ void Executor::updateStates(ExecutionState *current) {
 			seedMap.erase(it3);
 		processTree->remove(es->ptreeNode);
 		if (INTERPOLATION_ENABLED)
-			interpTree->remove(es->itreeNode);
+			txTree->remove(es->txTreeNode);
 		delete es;
 	}
 	removedStates.clear();
@@ -2944,7 +3096,9 @@ void Executor::checkMemoryUsage() {
 		// We need to avoid calling GetTotalMallocUsage() often because it
 		// is O(elts on freelist). This is really bad since we start
 		// to pummel the freelist once we hit the memory cap.
-		unsigned mbs = util::GetTotalMallocUsage() >> 20;
+		unsigned mbs = (util::GetTotalMallocUsage() >> 20)
+				+ (memory->getUsedDeterministicSize() >> 20);
+
 		if (mbs > MaxMemory) {
 			if (mbs > MaxMemory + 100) {
 				// just guess at how many to kill
@@ -2972,6 +3126,19 @@ void Executor::checkMemoryUsage() {
 	}
 }
 
+void Executor::doDumpStates() {
+	if (!DumpStatesOnHalt || states.empty())
+		return;
+	klee_message("halting execution, dumping remaining states");
+	for (std::set<ExecutionState *>::iterator it = states.begin(), ie =
+			states.end(); it != ie; ++it) {
+		ExecutionState &state = **it;
+		stepInstruction(state); // keep stats rolling
+		terminateStateEarly(state, "Execution halting.");
+	}
+	updateStates(0);
+}
+
 void Executor::run(ExecutionState &initialState) {
 
 	bindModuleConstants();
@@ -2981,9 +3148,10 @@ void Executor::run(ExecutionState &initialState) {
 	initTimers();
 
 	states.insert(&initialState);
-	if(interpreterOpts.PrintOut == Interpreter::Detail)
+	if (interpreterOpts.PrintOut == Interpreter::Detail)
 		HSETInfo.IsTurnOnNotification = true;
-	else HSETInfo.IsTurnOnNotification = false;
+	else
+		HSETInfo.IsTurnOnNotification = false;
 	if (interpreterOpts.ExeConfig == Interpreter::SymbolicExecution) {
 		if (usingSeeds) {
 			std::vector<SeedInfo> &v = seedMap[&initialState];
@@ -2996,8 +3164,10 @@ void Executor::run(ExecutionState &initialState) {
 			double lastTime, startTime = lastTime = util::getWallTime();
 			ExecutionState *lastState = 0;
 			while (!seedMap.empty()) {
-				if (haltExecution)
-					goto dump;
+				if (haltExecution) {
+					doDumpStates();
+					return;
+				}
 
 				std::map<ExecutionState*, std::vector<SeedInfo> >::iterator it =
 						seedMap.upper_bound(lastState);
@@ -3047,41 +3217,60 @@ void Executor::run(ExecutionState &initialState) {
 				(*it)->weight = 1.;
 			}
 
-			if (OnlySeed)
-				goto dump;
+			if (OnlySeed) {
+				doDumpStates();
+				return;
+			}
 		}
 
 		searcher = constructUserSearcher(*this);
-
-		searcher->update(0, states, std::set<ExecutionState*>());
+		std::vector<ExecutionState *> newStates(states.begin(), states.end());
+		searcher->update(0, newStates, std::vector<ExecutionState*>());
 
 		GlobalWCET = -1;
 		std::clock_t p_start;
 		p_start = std::clock();
 		while (!states.empty() && !haltExecution) {
-			NoInterpolation = true;
+			//NoInterpolation = true;
 			ExecutionState &state = searcher->selectState();
 
+#ifdef ENABLE_Z3
 			if (INTERPOLATION_ENABLED) {
 				// We synchronize the node id to that of the state. The node id
 				// is set only when it was the address of the first instruction
 				// in the node.
-				interpTree->setCurrentINode(state);
+				txTree->setCurrentINode(state);
 
-				// Uncomment the following statements to show the state
-				// of the interpolation tree and the active node.
+				uint64_t debugLevel = txTree->getDebugState();
 
-				//      llvm::errs() << "\nCurrent state:\n";
-				//      processTree->dump();
-				//      interpTree->dump();
-				//      state.itreeNode->dump();
-				//      llvm::errs() << "------------------- Executing New Instruction "
-				//                      "-----------------------\n";
-				//      state.pc->inst->dump();
+				if (debugLevel > 0) {
+					std::string debugMessage;
+					llvm::raw_string_ostream stream(debugMessage);
+					if (debugLevel > 1) {
+						stream << "\nCurrent state:\n";
+						processTree->print(stream);
+						stream << "\n";
+						txTree->print(stream);
+						stream << "\n";
+						stream << "--------------------------- Current Node "
+						"----------------------------\n";
+						state.txTreeNode->print(stream);
+						stream << "\n";
+					}
+					stream << "------------------- Executing New Instruction "
+					"-----------------------\n";
+					if (outputFunctionName(state.pc->inst, stream))
+					stream << ":";
+					state.pc->inst->print(stream);
+					stream << "\n";
+					stream.flush();
+
+					klee_message("%s", debugMessage.c_str());
+				}
 			}
-
+#endif
 			if (INTERPOLATION_ENABLED
-					&& interpTree->subsumptionCheck(solver, state,
+					&& txTree->subsumptionCheck(solver, state,
 							coreSolverTimeout)) {
 				terminateStateOnSubsumption(state);
 			} else {
@@ -3089,30 +3278,25 @@ void Executor::run(ExecutionState &initialState) {
 				stepInstruction(state);
 				HSETInfo.TotalNumberOfInstruction++;
 				executeInstruction(state, ki);
+				if (INTERPOLATION_ENABLED) {
+					state.txTreeNode->incInstructionsDepth();
+				}
 				processTimers(&state, MaxInstructionTime);
 				checkMemoryUsage();
-				updateStates(&state);
+
 			}
+			updateStates(&state);
 		}
-		if(interpreterOpts.PrintOut == Interpreter::Summary){
+		if (interpreterOpts.PrintOut == Interpreter::Summary) {
 			llvm::errs() << "WCET:" << GlobalWCET << "\n";
-			llvm::errs() << "Total execution time:" << std::clock() - p_start << "\n";
+			llvm::errs() << "Total execution time:" << std::clock() - p_start
+					<< "\n";
 		}
 
 		delete searcher;
 		searcher = 0;
 
-		dump: if (DumpStatesOnHalt && !states.empty()) {
-			llvm::errs()
-					<< "KLEE: halting execution, dumping remaining states\n";
-			for (std::set<ExecutionState*>::iterator it = states.begin(), ie =
-					states.end(); it != ie; ++it) {
-				ExecutionState &state = **it;
-				stepInstruction(state); // keep stats rolling
-				terminateStateEarly(state, "Execution halting.");
-			}
-			updateStates(0);
-		}
+		doDumpStates();
 
 	} else {
 		int countRun = 0;
@@ -3178,13 +3362,13 @@ void Executor::run(ExecutionState &initialState) {
 				//llvm::outs()<< "End run " << countRun << " , number path node:"<< HSETInfo.exactPathDictionary.size() << "\n";
 			}
 
-			if(interpreterOpts.PrintOut == Interpreter::Summary){
-					llvm::errs() << countRun << " " << HSETInfo.currentWCET.WCET << " "
-					<< HSETInfo.CurrentLowerBound << "-"
-					<< HSETInfo.currentWCET.LWCET << " "
-					<< HSETInfo.NumberExactInternalNode << " "
-					<< HSETInfo.NumberExactLeafNode << " "
-					<< HSETInfo.exactPathDictionary.size() << "\n";
+			if (interpreterOpts.PrintOut == Interpreter::Summary) {
+				llvm::errs() << countRun << " " << HSETInfo.currentWCET.WCET
+						<< " " << HSETInfo.CurrentLowerBound << "-"
+						<< HSETInfo.currentWCET.LWCET << " "
+						<< HSETInfo.NumberExactInternalNode << " "
+						<< HSETInfo.NumberExactLeafNode << " "
+						<< HSETInfo.exactPathDictionary.size() << "\n";
 			}
 		}
 
@@ -3247,9 +3431,11 @@ Executor::HSETSummary Executor::runWithAbstract(ExecutionState &initialState,
 		if (!(BypassingFirstBranch && i->getOpcode() == Instruction::Br))
 			resultHSET.WCET += estimateSpecificInstruction(i);
 
-		if(!state.logCurInstruction(interpreterOpts.MaxLoop)) break;
+		if (!state.logCurInstruction(interpreterOpts.MaxLoop))
+			break;
 		state.nInstruction++;
-		if(state.nInstruction > interpreterOpts.MaxInstruction) break;
+		if (state.nInstruction > (int) interpreterOpts.MaxInstruction)
+			break;
 		switch (i->getOpcode()) {
 		case Instruction::Ret: {
 			ReturnInst *ri = cast < ReturnInst > (i);
@@ -3276,7 +3462,6 @@ Executor::HSETSummary Executor::runWithAbstract(ExecutionState &initialState,
 						isTerminated = true;
 					}
 				}
-
 
 			}
 			break;
@@ -3415,7 +3600,6 @@ Executor::HSETSummary Executor::runWithAbstract(ExecutionState &initialState,
 
 			if (f) {
 				movedForward = true;
-
 
 				if (f && f->isDeclaration()) {
 					if (InvokeInst *ii = dyn_cast < InvokeInst > (i))
@@ -3659,171 +3843,299 @@ Executor::HSETSummary Executor::runWithSymbolicExecution(ExecutionState &state,
 	resultHSET.Concrete = true;
 	int freezedLWCET = 0;
 	std::map<std::string, std::string, comparer>::iterator tmpExactCachedState;
-	while (state.pc) {
-		KInstruction *ki = state.pc;
-		Instruction *i = ki->inst;
-		movedForward = false;
-		HSETInfo.TotalNumberOfInstruction++;
-		resultHSET.WCET += estimateSpecificInstruction(ki->inst);
-		state.ptreeNode->executionTime = resultHSET.LWCET = resultHSET.WCET;
-		if (HSETInfo.IsTurnOnNotification)
-			llvm::errs() << *i << "\n";
-		HSETInfo.TempTerminateMark = false;
-		state.nInstruction++;
-		if(state.nInstruction > interpreterOpts.MaxInstruction) break;
-		switch (i->getOpcode()) {
-		// Control flow
-		case Instruction::Ret: {
-			ReturnInst *ri = cast < ReturnInst > (i);
-			KInstIterator kcaller = state.stack.back().caller;
-			Instruction *caller = kcaller ? kcaller->inst : 0;
-			bool isVoidReturn = (ri->getNumOperands() == 0);
-			ref<Expr> tempExpr = ConstantExpr::alloc(0, Expr::Bool);
-			TaintSet taint = 0;
 
-			if (!isVoidReturn) {
-				Cell cell = eval(ki, 0, state);
-				tempExpr = cell.value;
-				taint = cell.taint;
-			}
+/*Next Step* : Integrate Interpolant
+ * a. Check for subsumption
+ * b. If yes, need to add mechanism to retrieve info from that branch
 
-			if (state.stack.size() <= 1) {
-				isTerminated = true;
-			} else {
-				ref<Expr> result = ConstantExpr::alloc(0, Expr::Bool);
-				state.popFrame(ki, result);
-				//Tan, temp assign result
-				result = tempExpr;
-				if (statsTracker)
-					statsTracker->framePopped(state);
+ #ifdef ENABLE_Z3
+	if (INTERPOLATION_ENABLED) {
+		// We synchronize the node id to that of the state. The node id
+		// is set only when it was the address of the first instruction
+		// in the node.
 
-				if (InvokeInst *ii = dyn_cast < InvokeInst > (caller)) {
-					transferToBasicBlock(ii->getNormalDest(),
-							caller->getParent(), state);
-				} else {
-					state.pc = kcaller;
-					//++state.pc;
-					state.popFuncDest();
-				}
-				//movedForward = true;
-				if (!isVoidReturn) {
-					LLVM_TYPE_Q Type *t = caller->getType();
-					if (t != Type::getVoidTy(getGlobalContext())) {
-						// may need to do coercion due to bitcasts
-						Expr::Width from = result->getWidth();
-						Expr::Width to = getWidthForLLVMType(t);
-
-						if (from != to) {
-							CallSite cs =
-									(isa < InvokeInst > (caller) ?
-											CallSite(
-													cast < InvokeInst
-															> (caller)) :
-											CallSite(cast < CallInst > (caller)));
-
-							// XXX need to check other param attrs ?
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
-							bool isSExt = cs.paramHasAttr(0,
-									llvm::Attribute::SExt);
-#elif LLVM_VERSION_CODE >= LLVM_VERSION(3, 2)
-							bool isSExt = cs.paramHasAttr(0, llvm::Attributes::SExt);
-#else
-							bool isSExt = cs.paramHasAttr(0, llvm::Attribute::SExt);
+		// Do we need to mark INode here ?
+		txTree->setCurrentINode(state);
+	}
 #endif
-							if (isSExt) {
-								result = SExtExpr::create(result, to);
-							} else {
-								result = ZExtExpr::create(result, to);
-							}
-						}
+	if (INTERPOLATION_ENABLED
+			&& txTree->subsumptionCheck(solver, state, coreSolverTimeout)) {
+		// (b) : retrieve info
+	} else {
+*/
+		while (state.pc) {
+			KInstruction *ki = state.pc;
+			Instruction *i = ki->inst;
+			movedForward = false;
+			HSETInfo.TotalNumberOfInstruction++;
+			resultHSET.WCET += estimateSpecificInstruction(ki->inst);
+			state.ptreeNode->executionTime = resultHSET.LWCET = resultHSET.WCET;
+			if (HSETInfo.IsTurnOnNotification)
+				llvm::errs() << *i << "\n";
+			HSETInfo.TempTerminateMark = false;
+			state.nInstruction++;
+			if (state.nInstruction > (int) interpreterOpts.MaxInstruction)
+				break;
+			switch (i->getOpcode()) {
+			// Control flow
+			case Instruction::Ret: {
+				ReturnInst *ri = cast < ReturnInst > (i);
+				KInstIterator kcaller = state.stack.back().caller;
+				Instruction *caller = kcaller ? kcaller->inst : 0;
+				bool isVoidReturn = (ri->getNumOperands() == 0);
+				ref<Expr> tempExpr = ConstantExpr::alloc(0, Expr::Bool);
+				TaintSet taint = 0;
 
-						bindLocal(kcaller, state, result, taint);
-					}
+				if (!isVoidReturn) {
+					Cell cell = eval(ki, 0, state);
+					tempExpr = cell.value;
+					taint = cell.taint;
+				}
+
+				if (state.stack.size() <= 1) {
+					isTerminated = true;
 				} else {
-					// We check that the return value has no users instead of
-					// checking the type, since C defaults to returning int for
-					// undeclared functions.
-					if (!caller->use_empty()) {
-						isTerminated = true;
-					}
-				}
-			}
-			break;
-		}
-#if LLVM_VERSION_CODE < LLVM_VERSION(3, 1)
-			case Instruction::Unwind: {
-				for (;;) {
-					KInstruction *kcaller = state.stack.back().caller;
-					state.popFrame(ki, ConstantExpr::alloc(0, Expr::Bool));
-
+					ref<Expr> result = ConstantExpr::alloc(0, Expr::Bool);
+					state.popFrame(ki, result);
+					//Tan, temp assign result
+					result = tempExpr;
 					if (statsTracker)
-					statsTracker->framePopped(state);
+						statsTracker->framePopped(state);
 
-					if (state.stack.empty()) {
-						isTerminated = true;
-						break;
+					if (InvokeInst *ii = dyn_cast < InvokeInst > (caller)) {
+						transferToBasicBlock(ii->getNormalDest(),
+								caller->getParent(), state);
 					} else {
-						Instruction *caller = kcaller->programPoint;
-						if (InvokeInst *ii = dyn_cast<InvokeInst>(caller)) {
-							transferToBasicBlock(ii->getUnwindDest(), caller->getParent(), state);
-							//movedForward = true;
-							break;
+						state.pc = kcaller;
+						//++state.pc;
+						state.popFuncDest();
+					}
+					//movedForward = true;
+					if (!isVoidReturn) {
+						LLVM_TYPE_Q Type *t = caller->getType();
+						if (t != Type::getVoidTy(getGlobalContext())) {
+							// may need to do coercion due to bitcasts
+							Expr::Width from = result->getWidth();
+							Expr::Width to = getWidthForLLVMType(t);
+
+							if (from != to) {
+								CallSite cs = (
+										isa < InvokeInst > (caller) ?
+												CallSite(
+														cast < InvokeInst
+																> (caller)) :
+												CallSite(
+														cast < CallInst
+																> (caller)));
+
+								// XXX need to check other param attrs ?
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
+								bool isSExt = cs.paramHasAttr(0,
+										llvm::Attribute::SExt);
+#elif LLVM_VERSION_CODE >= LLVM_VERSION(3, 2)
+								bool isSExt = cs.paramHasAttr(0, llvm::Attributes::SExt);
+#else
+								bool isSExt = cs.paramHasAttr(0, llvm::Attribute::SExt);
+#endif
+								if (isSExt) {
+									result = SExtExpr::create(result, to);
+								} else {
+									result = ZExtExpr::create(result, to);
+								}
+							}
+
+							bindLocal(kcaller, state, result, taint);
+						}
+					} else {
+						// We check that the return value has no users instead of
+						// checking the type, since C defaults to returning int for
+						// undeclared functions.
+						if (!caller->use_empty()) {
+							isTerminated = true;
 						}
 					}
 				}
-				if (INTERPOLATION_ENABLED)
-				interpTree->execute(i);
 				break;
 			}
+#if LLVM_VERSION_CODE < LLVM_VERSION(3, 1)
+				case Instruction::Unwind: {
+					for (;;) {
+						KInstruction *kcaller = state.stack.back().caller;
+						state.popFrame(ki, ConstantExpr::alloc(0, Expr::Bool));
+
+						if (statsTracker)
+						statsTracker->framePopped(state);
+
+						if (state.stack.empty()) {
+							isTerminated = true;
+							break;
+						} else {
+							Instruction *caller = kcaller->programPoint;
+							if (InvokeInst *ii = dyn_cast<InvokeInst>(caller)) {
+								transferToBasicBlock(ii->getUnwindDest(), caller->getParent(), state);
+								//movedForward = true;
+								break;
+							}
+						}
+					}
+					if (INTERPOLATION_ENABLED)
+					txTree->execute(i);
+					break;
+				}
 #endif
-		case Instruction::Br: {
-			BranchInst *bi = cast < BranchInst > (i);
-			if (bi->isUnconditional()) {
-				transferToBasicBlock(bi->getSuccessor(0), bi->getParent(),
-						state);
-				movedForward = true;
+			case Instruction::Br: {
+				BranchInst *bi = cast < BranchInst > (i);
+				if (bi->isUnconditional()) {
+					transferToBasicBlock(bi->getSuccessor(0), bi->getParent(),
+							state);
+					movedForward = true;
 
-				if (INTERPOLATION_ENABLED)
-					interpTree->execute(i);
-			} else {
-				// FIXME: Find a way that we don't have this hidden dependency.
-				assert(
-						bi->getCondition() == bi->getOperand(0)
-								&& "Wrong operand index!");
+					if (INTERPOLATION_ENABLED)
+						txTree->execute(i);
+				} else {
+					// FIXME: Find a way that we don't have this hidden dependency.
+					assert(
+							bi->getCondition() == bi->getOperand(0)
+									&& "Wrong operand index!");
 
-				ref<Expr> cond = eval(ki, 0, state).value;
-				Executor::StatePair branches = fork(state, cond, false);
+					ref<Expr> cond = eval(ki, 0, state).value;
+					Executor::StatePair branches = fork(state, cond, false);
 
-				// NOTE: There is a hidden dependency here, markBranchVisited
-				// requires that we still be in the context of the branch
-				// instruction (it reuses its statistic id). Should be cleaned
-				// up with convenient instruction specific data.
-				if (statsTracker && state.stack.back().kf->trackCoverage)
-					statsTracker->markBranchVisited(branches.first,
-							branches.second);
+					// NOTE: There is a hidden dependency here, markBranchVisited
+					// requires that we still be in the context of the branch
+					// instruction (it reuses its statistic id). Should be cleaned
+					// up with convenient instruction specific data.
+					if (statsTracker && state.stack.back().kf->trackCoverage)
+						statsTracker->markBranchVisited(branches.first,
+								branches.second);
 
-				if (HSETInfo.IsTurnOnNotification)
-					llvm::errs() << "Meet branch instruction, current WCET is "
-							<< resultHSET.WCET << "\n";
+					if (HSETInfo.IsTurnOnNotification)
+						llvm::errs()
+								<< "Meet branch instruction, current WCET is "
+								<< resultHSET.WCET << "\n";
 
-				if (branches.first || branches.second)
-					isLeafNode = false;
+					if (branches.first || branches.second)
+						isLeafNode = false;
 
-				if (IsAbstractWalk) {
-					if (branches.first && branches.second) {
+					if (IsAbstractWalk) {
+						if (branches.first && branches.second) {
+							HSETSummary trueHSET, falseHSET;
+
+							if (HSETInfo.IsTurnOnNotification)
+								llvm::errs() << "Start real abstract";
+							transferToBasicBlock(bi->getSuccessor(0),
+									bi->getParent(), *branches.first);
+							trueHSET = runWithAbstract(*branches.first,
+									abstractMethod, false);
+
+							transferToBasicBlock(bi->getSuccessor(1),
+									bi->getParent(), *branches.second);
+							falseHSET = runWithAbstract(*branches.second,
+									abstractMethod, false);
+
+							if (trueHSET.WCET > falseHSET.WCET) {
+								resultHSET.updateNextNode("1");
+								resultHSET.concat(trueHSET);
+							} else if (trueHSET.WCET == falseHSET.WCET) {
+								if (trueHSET.isConcrete()) {
+									resultHSET.updateNextNode("1");
+									resultHSET.concat(trueHSET);
+								} else {
+									resultHSET.updateNextNode("0");
+									resultHSET.concat(falseHSET);
+								}
+							} else {
+								resultHSET.updateNextNode("0");
+								resultHSET.concat(falseHSET);
+							}
+						} else if (branches.first) {
+							HSETSummary tempHSET;
+							transferToBasicBlock(bi->getSuccessor(0),
+									bi->getParent(), *branches.first);
+							tempHSET = runWithSymbolicExecution(*branches.first,
+									guilde, depth + 1, abstractMethod, true);
+							resultHSET.updateNextNode("1");
+							resultHSET.concat(tempHSET);
+							resultHSET.LWCET += tempHSET.LWCET;
+						} else if (branches.second) {
+							HSETSummary tempHSET;
+							transferToBasicBlock(bi->getSuccessor(1),
+									bi->getParent(), *branches.second);
+							tempHSET = runWithSymbolicExecution(
+									*branches.second, guilde, depth + 1,
+									abstractMethod, true);
+							resultHSET.updateNextNode("0");
+							resultHSET.concat(tempHSET);
+							resultHSET.LWCET += tempHSET.LWCET;
+						}
+					} else {
 						HSETSummary trueHSET, falseHSET;
+						if (branches.first) {
+							assert(
+									branches.first->taint == state.taint
+											&& "Taint should be propagated to forking states!");
+							transferToBasicBlock(bi->getSuccessor(0),
+									bi->getParent(), *branches.first);
 
-						if (HSETInfo.IsTurnOnNotification)
-							llvm::errs() << "Start real abstract";
-						transferToBasicBlock(bi->getSuccessor(0),
-								bi->getParent(), *branches.first);
-						trueHSET = runWithAbstract(*branches.first,
-								abstractMethod, false);
+							if ((unsigned) depth >= guilde.length()
+									|| guilde[depth] == '1') {
+								if (HSETInfo.IsTurnOnNotification)
+									llvm::errs()
+											<< "Follow true branch with symbolic: \n";
+								trueHSET = runWithSymbolicExecution(
+										*branches.first, guilde, depth + 1,
+										abstractMethod, false);
+								//resultHSET.LWCET += trueHSET.LWCET;
+							} else {
+								if (HSETInfo.IsTurnOnNotification)
+									llvm::errs()
+											<< "Follow true branch with abstract: \n";
+								trueHSET = extractAlternativePath(
+										*branches.first, guilde, depth,
+										abstractMethod, "1", branches.second);
+							}
+							if (HSETInfo.IsTurnOnNotification)
+								llvm::errs() << resultHSET.WCET
+										<< " --- True WCET is " << trueHSET.WCET
+										<< "\n";
+						} else {
+							if (HSETInfo.IsTurnOnNotification)
+								llvm::errs() << "Infeasible true branch. \n";
+							trueHSET.WCET = -99999;
+						}
+						if (branches.second) {
+							assert(
+									branches.second->taint == state.taint
+											&& "Taint should be propagated to forking states!");
+							transferToBasicBlock(bi->getSuccessor(1),
+									bi->getParent(), *branches.second);
 
-						transferToBasicBlock(bi->getSuccessor(1),
-								bi->getParent(), *branches.second);
-						falseHSET = runWithAbstract(*branches.second,
-								abstractMethod, false);
+							if (guilde[depth] == '1') {
+								if (HSETInfo.IsTurnOnNotification)
+									llvm::errs()
+											<< "Follow false branch with abstract: \n";
+								falseHSET = extractAlternativePath(
+										*branches.second, guilde, depth,
+										abstractMethod, "0", branches.first);
+							} else {
+								if (HSETInfo.IsTurnOnNotification)
+									llvm::errs()
+											<< "Follow false branch with symbolic: \n";
+								falseHSET = runWithSymbolicExecution(
+										*branches.second, guilde, depth + 1,
+										abstractMethod, false);
+
+								//resultHSET.LWCET += falseHSET.LWCET;
+							}
+							if (HSETInfo.IsTurnOnNotification)
+								llvm::errs() << resultHSET.WCET
+										<< " --- False WCET is "
+										<< falseHSET.WCET << "\n";
+						} else {
+							if (HSETInfo.IsTurnOnNotification)
+								llvm::errs() << "Infeasible false branch. \n";
+							falseHSET.WCET = -99999;
+						}
 
 						if (trueHSET.WCET > falseHSET.WCET) {
 							resultHSET.updateNextNode("1");
@@ -3840,1345 +4152,1277 @@ Executor::HSETSummary Executor::runWithSymbolicExecution(ExecutionState &state,
 							resultHSET.updateNextNode("0");
 							resultHSET.concat(falseHSET);
 						}
-					} else if (branches.first) {
-						HSETSummary tempHSET;
-						transferToBasicBlock(bi->getSuccessor(0),
-								bi->getParent(), *branches.first);
-						tempHSET = runWithSymbolicExecution(*branches.first,
-								guilde, depth + 1, abstractMethod, true);
-						resultHSET.updateNextNode("1");
-						resultHSET.concat(tempHSET);
-						resultHSET.LWCET += tempHSET.LWCET;
-					} else if (branches.second) {
-						HSETSummary tempHSET;
-						transferToBasicBlock(bi->getSuccessor(1),
-								bi->getParent(), *branches.second);
-						tempHSET = runWithSymbolicExecution(*branches.second,
-								guilde, depth + 1, abstractMethod, true);
-						resultHSET.updateNextNode("0");
-						resultHSET.concat(tempHSET);
-						resultHSET.LWCET += tempHSET.LWCET;
-					}
-				} else {
-					HSETSummary trueHSET, falseHSET;
-					if (branches.first) {
-						assert(
-								branches.first->taint == state.taint
-										&& "Taint should be propagated to forking states!");
-						transferToBasicBlock(bi->getSuccessor(0),
-								bi->getParent(), *branches.first);
 
-						if ((unsigned) depth >= guilde.length()
-								|| guilde[depth] == '1') {
-							if (HSETInfo.IsTurnOnNotification)
-								llvm::errs()
-										<< "Follow true branch with symbolic: \n";
-							trueHSET = runWithSymbolicExecution(*branches.first,
-									guilde, depth + 1, abstractMethod, false);
-							//resultHSET.LWCET += trueHSET.LWCET;
+						if (trueHSET.LWCET > falseHSET.LWCET) {
+							resultHSET.LWCET += trueHSET.LWCET;
 						} else {
-							if (HSETInfo.IsTurnOnNotification)
-								llvm::errs()
-										<< "Follow true branch with abstract: \n";
-							trueHSET = extractAlternativePath(*branches.first,
-									guilde, depth, abstractMethod, "1",
-									branches.second);
+							resultHSET.LWCET += falseHSET.LWCET;
 						}
-						if (HSETInfo.IsTurnOnNotification)
-							llvm::errs() << resultHSET.WCET
-									<< " --- True WCET is " << trueHSET.WCET
-									<< "\n";
-					} else {
-						if (HSETInfo.IsTurnOnNotification)
-							llvm::errs() << "Infeasible true branch. \n";
-						trueHSET.WCET = -99999;
+
 					}
-					if (branches.second) {
-						assert(
-								branches.second->taint == state.taint
-										&& "Taint should be propagated to forking states!");
-						transferToBasicBlock(bi->getSuccessor(1),
-								bi->getParent(), *branches.second);
+					isTerminated = true;
 
-						if (guilde[depth] == '1') {
-							if (HSETInfo.IsTurnOnNotification)
-								llvm::errs()
-										<< "Follow false branch with abstract: \n";
-							falseHSET = extractAlternativePath(*branches.second,
-									guilde, depth, abstractMethod, "0",
-									branches.first);
-						} else {
-							if (HSETInfo.IsTurnOnNotification)
-								llvm::errs()
-										<< "Follow false branch with symbolic: \n";
-							falseHSET = runWithSymbolicExecution(
-									*branches.second, guilde, depth + 1,
-									abstractMethod, false);
-
-							//resultHSET.LWCET += falseHSET.LWCET;
-						}
-						if (HSETInfo.IsTurnOnNotification)
-							llvm::errs() << resultHSET.WCET
-									<< " --- False WCET is " << falseHSET.WCET
-									<< "\n";
-					} else {
-						if (HSETInfo.IsTurnOnNotification)
-							llvm::errs() << "Infeasible false branch. \n";
-						falseHSET.WCET = -99999;
-					}
-
-					if (trueHSET.WCET > falseHSET.WCET) {
-						resultHSET.updateNextNode("1");
-						resultHSET.concat(trueHSET);
-					} else if (trueHSET.WCET == falseHSET.WCET) {
-						if (trueHSET.isConcrete()) {
-							resultHSET.updateNextNode("1");
-							resultHSET.concat(trueHSET);
-						} else {
-							resultHSET.updateNextNode("0");
-							resultHSET.concat(falseHSET);
-						}
-					} else {
-						resultHSET.updateNextNode("0");
-						resultHSET.concat(falseHSET);
-					}
-
-					if (trueHSET.LWCET > falseHSET.LWCET) {
-						resultHSET.LWCET += trueHSET.LWCET;
-					} else {
-						resultHSET.LWCET += falseHSET.LWCET;
-					}
-
+					// Below we test if some of the branches are not available for
+					// exploration, which means that there is a dependency of the program
+					// state on the control variables in the conditional. Such variables
+					// (allocations) need to be marked as belonging to the core.
+					// This is mainly to take care of the case when the conditional
+					// variables are not marked using unsatisfiability core as the
+					// conditional is concrete and therefore there has been no invocation
+					// of the solver to decide its satisfiability, and no generation
+					// of the unsatisfiability core.
+					if (INTERPOLATION_ENABLED
+							&& ((!branches.first && branches.second)
+									|| (branches.first && !branches.second)))
+						txTree->execute(i);
 				}
-				isTerminated = true;
-
-				// Below we test if some of the branches are not available for
-				// exploration, which means that there is a dependency of the program
-				// state on the control variables in the conditional. Such variables
-				// (allocations) need to be marked as belonging to the core.
-				// This is mainly to take care of the case when the conditional
-				// variables are not marked using unsatisfiability core as the
-				// conditional is concrete and therefore there has been no invocation
-				// of the solver to decide its satisfiability, and no generation
-				// of the unsatisfiability core.
-				if (INTERPOLATION_ENABLED
-						&& ((!branches.first && branches.second)
-								|| (branches.first && !branches.second)))
-					interpTree->execute(i);
+				break;
 			}
-			break;
-		}
-		case Instruction::Switch: {
-			SwitchInst *si = cast < SwitchInst > (i);
-			ref<Expr> cond = eval(ki, 0, state).value;
-			BasicBlock *bb = si->getParent();
-			isLeafNode = false;
+			case Instruction::Switch: {
+				SwitchInst *si = cast < SwitchInst > (i);
+				ref<Expr> cond = eval(ki, 0, state).value;
+				BasicBlock *bb = si->getParent();
+				isLeafNode = false;
 
-			cond = toUnique(state, cond);
-			if (ConstantExpr *CE = dyn_cast < ConstantExpr > (cond)) {
+				cond = toUnique(state, cond);
+				if (ConstantExpr *CE = dyn_cast < ConstantExpr > (cond)) {
 
-				// Somewhat gross to create these all the time, but fine till we
-				// switch to an internal rep.
-				LLVM_TYPE_Q llvm::IntegerType *Ty = cast < IntegerType
-						> (si->getCondition()->getType());
-				ConstantInt *ci = ConstantInt::get(Ty, CE->getZExtValue());
+					// Somewhat gross to create these all the time, but fine till we
+					// switch to an internal rep.
+					LLVM_TYPE_Q llvm::IntegerType *Ty = cast < IntegerType
+							> (si->getCondition()->getType());
+					ConstantInt *ci = ConstantInt::get(Ty, CE->getZExtValue());
 #if LLVM_VERSION_CODE >= LLVM_VERSION(3, 1)
-				unsigned index = si->findCaseValue(ci).getSuccessorIndex();
+					unsigned index = si->findCaseValue(ci).getSuccessorIndex();
 #else
-				unsigned index = si->findCaseValue(ci);
+					unsigned index = si->findCaseValue(ci);
 #endif
 
-				transferToBasicBlock(si->getSuccessor(index), si->getParent(),
-						state);
+					transferToBasicBlock(si->getSuccessor(index),
+							si->getParent(), state);
 
-				//Todo fix this point TN
-				HSETSummary tempHSET;
-				std::string chosenPath = "";
-				bool isFollowingPath = true;
+					//Todo fix this point TN
+					HSETSummary tempHSET;
+					std::string chosenPath = "";
+					bool isFollowingPath = true;
 
-				for (unsigned i = 0; i < index; i++)
-					chosenPath += '0';
-				chosenPath += '1';
+					for (unsigned i = 0; i < index; i++)
+						chosenPath += '0';
+					chosenPath += '1';
 
-				if (depth + index < guilde.length())
-					for (unsigned i = 0; i <= index; i++) {
-						if (guilde[depth + i] != chosenPath[i]) {
-							isFollowingPath = false;
+					if (depth + index < guilde.length())
+						for (unsigned i = 0; i <= index; i++) {
+							if (guilde[depth + i] != chosenPath[i]) {
+								isFollowingPath = false;
+								break;
+							}
+						}
+					else
+						isFollowingPath = false;
+
+					movedForward = true;
+					int cuttingPoint = 0;
+					for (unsigned j = depth; j < guilde.length(); j++)
+						if (guilde[j] == '1') {
+							cuttingPoint = j;
+							break;
+						}
+
+					if (isFollowingPath) {
+						guilde = guilde.substr(0, depth)
+								+ guilde.substr(cuttingPoint + 1,
+										guilde.length() - cuttingPoint - 1);
+					} else {
+						guilde = guilde.substr(0, depth)
+								+ guilde.substr(cuttingPoint + 1,
+										guilde.length() - cuttingPoint - 1);
+						freezedLWCET = resultHSET.LWCET;
+					}
+					resultHSET.Path += chosenPath;
+
+				} else {
+					std::map<BasicBlock*, ref<Expr> > targets;
+					std::map<BasicBlock*, unsigned> targetsPosition;
+					ref<Expr> isDefault = ConstantExpr::alloc(1, Expr::Bool);
+
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 1)
+					for (SwitchInst::CaseIt i = si->case_begin(), e =
+							si->case_end(); i != e; ++i) {
+						ref<Expr> value = evalConstant(i.getCaseValue());
+#else
+						for (unsigned i=1, cases = si->getNumCases(); i<cases; ++i) {
+							ref<Expr> value = evalConstant(si->getCaseValue(i));
+#endif
+						ref<Expr> match = EqExpr::create(cond, value);
+						isDefault = AndExpr::create(isDefault,
+								Expr::createIsZero(match));
+						bool result;
+						bool success = solver->mayBeTrue(state, match, result);
+						assert(success && "FIXME: Unhandled solver failure");
+						(void) success;
+						if (result) {
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 1)
+							BasicBlock *caseSuccessor = i.getCaseSuccessor();
+							targetsPosition.insert(
+									std::make_pair(caseSuccessor,
+											i.getSuccessorIndex()));
+#else
+							BasicBlock *caseSuccessor = si->getSuccessor(i);
+							targetsPosition.insert(std::make_pair(caseSuccessor, i));
+#endif
+							std::map<BasicBlock*, ref<Expr> >::iterator it =
+									targets.insert(
+											std::make_pair(caseSuccessor,
+													ConstantExpr::alloc(0,
+															Expr::Bool))).first;
+
+							it->second = OrExpr::create(match, it->second);
+						}
+					}
+					bool res;
+					bool success = solver->mayBeTrue(state, isDefault, res);
+					assert(success && "FIXME: Unhandled solver failure");
+					(void) success;
+					//TN: Always add
+					//if (res)
+					targets.insert(
+							std::make_pair(si->getDefaultDest(), isDefault));
+					targetsPosition.insert(
+							std::make_pair(si->getDefaultDest(), 0));
+
+					std::vector<ref<Expr> > conditions;
+					for (std::map<BasicBlock*, ref<Expr> >::iterator it =
+							targets.begin(), ie = targets.end(); it != ie; ++it)
+						conditions.push_back(it->second);
+					///////////////////////////////
+					std::vector<ExecutionState*> branches;
+					branch(state, conditions, branches);
+
+					HSETSummary maxHSET;
+					HSETSummary tempHSET;
+
+					bool isFollowingPath = true;
+					std::string chosingPath = "";
+					std::string maxPath = "";
+
+					isLeafNode = false;
+					if (HSETInfo.IsTurnOnNotification)
+						llvm::errs() << "Entering Switch" << "\n";
+					unsigned caseIndex;
+					int maxLWCET = -1;
+					//Todo Fix this point
+					std::vector<ExecutionState*>::iterator bit =
+							branches.begin();
+					for (std::map<BasicBlock*, ref<Expr> >::iterator it =
+							targets.begin(), ie = targets.end(); it != ie;
+							++it) {
+
+						ExecutionState *es = *bit;
+						if (es) {
+							transferToBasicBlock(it->first, bb, *es);
+
+							caseIndex =
+									(targetsPosition.find(it->first))->second;
+							chosingPath = "";
+							for (unsigned i = 0; i < caseIndex; i++)
+								chosingPath += '0';
+							chosingPath += '1';
+
+							if (depth + caseIndex < guilde.length())
+								for (unsigned i = 0; i <= caseIndex; i++) {
+									if (guilde[depth + i] != chosingPath[i]) {
+										isFollowingPath = false;
+										break;
+									}
+								}
+							else
+								isFollowingPath = false;
+
+							if (isFollowingPath) {
+								if (HSETInfo.IsTurnOnNotification)
+									llvm::errs()
+											<< "Following path with symbolic"
+											<< caseIndex << "\n";
+								tempHSET = runWithSymbolicExecution(*es, guilde,
+										depth + caseIndex + 1, abstractMethod,
+										false);
+								//resultHSET.LWCET += tempHSET.LWCET;
+
+							} else {
+								tempHSET = extractAlternativePath(*es, guilde,
+										depth, abstractMethod, chosingPath,
+										false);
+							}
+
+							if (tempHSET.LWCET > maxLWCET)
+								maxLWCET = tempHSET.LWCET;
+
+							if (tempHSET.WCET > maxHSET.WCET
+									|| (tempHSET.WCET == maxHSET.WCET
+											&& tempHSET.isConcrete())) {
+								maxHSET = tempHSET.clone(0);
+								maxPath = chosingPath;
+							}
+						}
+						++bit;
+					}
+					resultHSET.updateNextNode(maxPath);
+					resultHSET.concat(maxHSET);
+					resultHSET.LWCET += maxLWCET;
+					isTerminated = true;
+				}
+
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i);
+				break;
+			}
+			case Instruction::Unreachable:
+				// Note that this is not necessarily an internal bug, llvm will
+				// generate unreachable instructions in cases where it knows the
+				// program will crash. So it is effectively a SEGV or internal
+				// error.
+				isTerminated = true;
+				break;
+
+			case Instruction::Invoke:
+			case Instruction::Call: {
+				CallSite cs(i);
+				unsigned numArgs = cs.arg_size();
+				Value *fp = cs.getCalledValue();
+				Function *f = getTargetFunction(fp, state);
+
+				// Skip debug intrinsics, we can't evaluate their metadata arguments.
+				if (f && isDebugIntrinsic(f, kmodule))
+					break;
+
+				if (isa < InlineAsm > (fp)) {
+					isTerminated = true;
+					break;
+				}
+				// evaluate arguments
+				std::vector < std::pair<ref<Expr>, TaintSet> > arguments;
+				arguments.reserve(numArgs);
+
+				for (unsigned j = 0; j < numArgs; ++j) {
+					Cell cell = eval(ki, j + 1, state);
+					arguments.push_back(std::make_pair(cell.value, cell.taint));
+				}
+
+				if (f) {
+					const FunctionType *fType = dyn_cast < FunctionType
+							> (cast < PointerType
+									> (f->getType())->getElementType());
+					const FunctionType *fpType = dyn_cast < FunctionType
+							> (cast < PointerType
+									> (fp->getType())->getElementType());
+
+					// special case the call with a bitcast case
+					if (fType != fpType) {
+						assert(
+								fType && fpType
+										&& "unable to get function type");
+
+						// XXX check result coercion
+
+						// XXX this really needs thought and validation
+						unsigned i = 0;
+						for (std::vector<std::pair<ref<Expr>, TaintSet> >::iterator
+								ai = arguments.begin(), ie = arguments.end();
+								ai != ie; ++ai) {
+							Expr::Width to, from = (*ai).first->getWidth();
+
+							if (i < fType->getNumParams()) {
+								to = getWidthForLLVMType(
+										fType->getParamType(i));
+
+								if (from != to) {
+									// XXX need to check other param attrs ?
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
+									bool isSExt = cs.paramHasAttr(i + 1,
+											llvm::Attribute::SExt);
+#elif LLVM_VERSION_CODE >= LLVM_VERSION(3, 2)
+									bool isSExt = cs.paramHasAttr(i+1, llvm::Attributes::SExt);
+#else
+									bool isSExt = cs.paramHasAttr(i+1, llvm::Attribute::SExt);
+#endif
+									if (isSExt) {
+										arguments[i].first = SExtExpr::create(
+												arguments[i].first, to);
+									} else {
+										arguments[i].first = ZExtExpr::create(
+												arguments[i].first, to);
+									}
+								}
+							}
+
+							i++;
+						}
+					}
+
+					if (f && f->isDeclaration()) {
+					} else {
+						//llvm::errs()<<"Push\n";
+						state.pushFuncDest(state.pc->dest);
+					}
+
+					executeCall(state, ki, f, arguments);
+					movedForward = true;
+					if (f->isDeclaration()) {
+						switch (f->getIntrinsicID()) {
+						case Intrinsic::not_intrinsic:
+							movedForward = false;
+							break;
+						default:
 							break;
 						}
 					}
+
+				} else {
+					ref<Expr> v = eval(ki, 0, state).value;
+
+					ExecutionState *free = &state;
+					bool hasInvalid = false, first = true;
+
+					/* XXX This is wasteful, no need to do a full evaluate since we
+					 have already got a value. But in the end the caches should
+					 handle it for us, albeit with some overhead. */
+					do {
+						ref<ConstantExpr> value;
+						bool success = solver->getValue(*free, v, value);
+						assert(success && "FIXME: Unhandled solver failure");
+						(void) success;
+						StatePair res = fork(*free, EqExpr::create(v, value),
+								true);
+						if (res.first) {
+							uint64_t addr = value->getZExtValue();
+							if (legalFunctions.count(addr)) {
+								f = (Function*) addr;
+
+								// Don't give warning on unique resolution
+								if (res.second || !first)
+									klee_warning_once(
+											(void*) (unsigned long) addr,
+											"resolved symbolic function pointer to: %s",
+											f->getName().data());
+
+								executeCall(*res.first, ki, f, arguments);
+							} else {
+								if (!hasInvalid) {
+									isTerminated = true;
+									hasInvalid = true;
+								}
+							}
+						}
+
+						first = false;
+						free = res.second;
+					} while (free);
+				}
+
+				break;
+			}
+			case Instruction::PHI: {
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 0)
+				Cell result = eval(ki, state.incomingBBIndex, state);
+#else
+				Cell result = eval(ki, state.incomingBBIndex * 2, state);
+#endif
+				bindLocal(ki, state, result.value, result.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED) {
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 0)
+					txTree->executePHI(i, state.incomingBBIndex, result.value);
+#else
+					txTree->executePHI(i, state.incomingBBIndex * 2, result.value);
+#endif
+				}
+
+				break;
+			}
+
+				// Special instructions
+			case Instruction::Select: {
+				Cell cond = eval(ki, 0, state);
+				Cell tExpr = eval(ki, 1, state);
+				Cell fExpr = eval(ki, 2, state);
+				ref<Expr> result = SelectExpr::create(cond.value, tExpr.value,
+						fExpr.value);
+				bindLocal(ki, state, result,
+						cond.taint | tExpr.taint | fExpr.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, tExpr.value, fExpr.value);
+				break;
+			}
+
+			case Instruction::VAArg:
+				isTerminated = true;
+				break;
+
+				// Arithmetic / logical
+
+			case Instruction::Add: {
+				Cell left = eval(ki, 0, state);
+				Cell right = eval(ki, 1, state);
+				ref<Expr> result = AddExpr::create(left.value, right.value);
+				bindLocal(ki, state, result, left.taint | right.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, left.value, right.value);
+				break;
+			}
+
+			case Instruction::Sub: {
+				Cell left = eval(ki, 0, state);
+				Cell right = eval(ki, 1, state);
+				ref<Expr> result = SubExpr::create(left.value, right.value);
+				bindLocal(ki, state, result, left.taint | right.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, left.value, right.value);
+				break;
+			}
+
+			case Instruction::Mul: {
+				Cell left = eval(ki, 0, state);
+				Cell right = eval(ki, 1, state);
+				ref<Expr> result = MulExpr::create(left.value, right.value);
+				bindLocal(ki, state, result, left.taint | right.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, left.value, right.value);
+				break;
+			}
+
+			case Instruction::UDiv: {
+				Cell left = eval(ki, 0, state);
+				Cell right = eval(ki, 1, state);
+				ref<Expr> result = UDivExpr::create(left.value, right.value);
+				bindLocal(ki, state, result, left.taint | right.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, left.value, right.value);
+				break;
+			}
+
+			case Instruction::SDiv: {
+				Cell left = eval(ki, 0, state);
+				Cell right = eval(ki, 1, state);
+				ref<Expr> result = SDivExpr::create(left.value, right.value);
+				bindLocal(ki, state, result, left.taint | right.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, left.value, right.value);
+				break;
+			}
+
+			case Instruction::URem: {
+				Cell left = eval(ki, 0, state);
+				Cell right = eval(ki, 1, state);
+				ref<Expr> result = URemExpr::create(left.value, right.value);
+				bindLocal(ki, state, result, left.taint | right.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, left.value, right.value);
+				break;
+			}
+
+			case Instruction::SRem: {
+				Cell left = eval(ki, 0, state);
+				Cell right = eval(ki, 1, state);
+				ref<Expr> result = SRemExpr::create(left.value, right.value);
+				bindLocal(ki, state, result, left.taint | right.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, left.value, right.value);
+				break;
+			}
+
+			case Instruction::And: {
+				Cell left = eval(ki, 0, state);
+				Cell right = eval(ki, 1, state);
+				ref<Expr> result = AndExpr::create(left.value, right.value);
+				bindLocal(ki, state, result, left.taint | right.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, left.value, right.value);
+				break;
+			}
+
+			case Instruction::Or: {
+				Cell left = eval(ki, 0, state);
+				Cell right = eval(ki, 1, state);
+				ref<Expr> result = OrExpr::create(left.value, right.value);
+				bindLocal(ki, state, result, left.taint | right.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, left.value, right.value);
+				break;
+			}
+
+			case Instruction::Xor: {
+				Cell left = eval(ki, 0, state);
+				Cell right = eval(ki, 1, state);
+				ref<Expr> result = XorExpr::create(left.value, right.value);
+				bindLocal(ki, state, result, left.taint | right.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, left.value, right.value);
+				break;
+			}
+
+			case Instruction::Shl: {
+				Cell left = eval(ki, 0, state);
+				Cell right = eval(ki, 1, state);
+				ref<Expr> result = ShlExpr::create(left.value, right.value);
+				bindLocal(ki, state, result, left.taint | right.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, left.value, right.value);
+				break;
+			}
+
+			case Instruction::LShr: {
+				Cell left = eval(ki, 0, state);
+				Cell right = eval(ki, 1, state);
+				ref<Expr> result = LShrExpr::create(left.value, right.value);
+				bindLocal(ki, state, result, left.taint | right.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, left.value, right.value);
+				break;
+			}
+
+			case Instruction::AShr: {
+				Cell left = eval(ki, 0, state);
+				Cell right = eval(ki, 1, state);
+				ref<Expr> result = AShrExpr::create(left.value, right.value);
+				bindLocal(ki, state, result, left.taint | right.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, left.value, right.value);
+				break;
+			}
+
+				// Compare
+
+			case Instruction::ICmp: {
+				CmpInst *ci = cast < CmpInst > (i);
+				ICmpInst *ii = cast < ICmpInst > (ci);
+				Cell left = eval(ki, 0, state);
+				Cell right = eval(ki, 1, state);
+				ref<Expr> result;
+
+				switch (ii->getPredicate()) {
+				case ICmpInst::ICMP_EQ: {
+					result = EqExpr::create(left.value, right.value);
+					break;
+				}
+
+				case ICmpInst::ICMP_NE: {
+					result = NeExpr::create(left.value, right.value);
+					break;
+				}
+
+				case ICmpInst::ICMP_UGT: {
+					result = UgtExpr::create(left.value, right.value);
+					break;
+				}
+
+				case ICmpInst::ICMP_UGE: {
+					result = UgeExpr::create(left.value, right.value);
+					break;
+				}
+
+				case ICmpInst::ICMP_ULT: {
+					result = UltExpr::create(left.value, right.value);
+					break;
+				}
+
+				case ICmpInst::ICMP_ULE: {
+					result = UleExpr::create(left.value, right.value);
+					break;
+				}
+
+				case ICmpInst::ICMP_SGT: {
+					result = SgtExpr::create(left.value, right.value);
+					break;
+				}
+
+				case ICmpInst::ICMP_SGE: {
+					result = SgeExpr::create(left.value, right.value);
+					break;
+				}
+
+				case ICmpInst::ICMP_SLT: {
+					result = SltExpr::create(left.value, right.value);
+					break;
+				}
+
+				case ICmpInst::ICMP_SLE: {
+					result = SleExpr::create(left.value, right.value);
+					break;
+				}
+
+				default:
+					terminateStateOnExecError(state, "invalid ICmp predicate");
+				}
+
+				bindLocal(ki, state, result, left.taint | right.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, left.value, right.value);
+				break;
+			}
+
+				// Memory instructions...
+			case Instruction::Alloca: {
+				AllocaInst *ai = cast < AllocaInst > (i);
+				unsigned elementSize = kmodule->targetData->getTypeStoreSize(
+						ai->getAllocatedType());
+				ref<Expr> size = Expr::createPointer(elementSize);
+				if (ai->isArrayAllocation()) {
+					ref<Expr> count = eval(ki, 0, state).value;
+					count = Expr::createZExtToPointerWidth(count);
+					size = MulExpr::create(size, count);
+				}
+				bool isLocal = i->getOpcode() == Instruction::Alloca;
+				executeAlloc(state, size, isLocal, ki);
+				break;
+			}
+
+			case Instruction::Load: {
+				executeMemoryOperation(state, false, eval(ki, 0, state).value,
+						0, ki, eval(ki, 0, state).taint, 0);
+				break;
+			}
+			case Instruction::Store: {
+				executeMemoryOperation(state, true, eval(ki, 1, state).value,
+						eval(ki, 0, state).value, ki, eval(ki, 1, state).taint,
+						eval(ki, 0, state).taint);
+				break;
+			}
+
+			case Instruction::GetElementPtr: {
+				KGEPInstruction *kgepi = static_cast<KGEPInstruction*>(ki);
+				Cell base = eval(ki, 0, state);
+				TaintSet taint = base.taint;
+				ref<Expr> address(base.value);
+				ref<Expr> offset(Expr::createPointer(0));
+
+				for (std::vector<std::pair<unsigned, uint64_t> >::iterator it =
+						kgepi->indices.begin(), ie = kgepi->indices.end();
+						it != ie; ++it) {
+					uint64_t elementSize = it->second;
+
+					Cell index = eval(ki, it->first, state);
+					address = AddExpr::create(address,
+							MulExpr::create(
+									Expr::createSExtToPointerWidth(index.value),
+									Expr::createPointer(elementSize)));
+					taint |= index.taint;
+					if (INTERPOLATION_ENABLED) {
+						offset = AddExpr::create(offset,
+								MulExpr::create(
+										Expr::createSExtToPointerWidth(
+												index.value),
+										Expr::createPointer(elementSize)));
+					}
+				}
+				if (kgepi->offset) {
+					address = AddExpr::create(address,
+							Expr::createPointer(kgepi->offset));
+					if (INTERPOLATION_ENABLED) {
+						offset = AddExpr::create(offset,
+								Expr::createPointer(kgepi->offset));
+					}
+				}
+				bindLocal(ki, state, address, taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, address, base.value, offset);
+				break;
+			}
+
+				// Conversion
+			case Instruction::Trunc: {
+				CastInst *ci = cast < CastInst > (i);
+				Cell arg = eval(ki, 0, state);
+				ref<Expr> result = ExtractExpr::create(arg.value, 0,
+						getWidthForLLVMType(ci->getType()));
+				bindLocal(ki, state, result, arg.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, arg.value);
+				break;
+			}
+			case Instruction::ZExt: {
+				CastInst *ci = cast < CastInst > (i);
+				Cell arg = eval(ki, 0, state);
+				ref<Expr> result = ZExtExpr::create(arg.value,
+						getWidthForLLVMType(ci->getType()));
+				bindLocal(ki, state, result, arg.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, arg.value);
+				break;
+			}
+			case Instruction::SExt: {
+				CastInst *ci = cast < CastInst > (i);
+				Cell arg = eval(ki, 0, state);
+				ref<Expr> result = SExtExpr::create(arg.value,
+						getWidthForLLVMType(ci->getType()));
+				bindLocal(ki, state, result, arg.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, arg.value);
+				break;
+			}
+
+			case Instruction::IntToPtr: {
+				CastInst *ci = cast < CastInst > (i);
+				Expr::Width pType = getWidthForLLVMType(ci->getType());
+				Cell arg = eval(ki, 0, state);
+				ref<Expr> result = ZExtExpr::create(arg.value, pType);
+				bindLocal(ki, state, result, arg.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, arg.value);
+				break;
+			}
+			case Instruction::PtrToInt: {
+				CastInst *ci = cast < CastInst > (i);
+				Expr::Width iType = getWidthForLLVMType(ci->getType());
+				Cell arg = eval(ki, 0, state);
+				ref<Expr> result = ZExtExpr::create(arg.value, iType);
+				bindLocal(ki, state, result, arg.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, arg.value);
+				break;
+			}
+
+			case Instruction::BitCast: {
+				Cell result = eval(ki, 0, state);
+				bindLocal(ki, state, result.value, result.taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result.value);
+				break;
+			}
+
+				// Floating point instructions
+
+			case Instruction::FAdd: {
+				ref<ConstantExpr> left = toConstant(state,
+						eval(ki, 0, state).value, "floating point");
+				ref<ConstantExpr> right = toConstant(state,
+						eval(ki, 1, state).value, "floating point");
+				if (!fpWidthToSemantics(left->getWidth())
+						|| !fpWidthToSemantics(right->getWidth()))
+					isTerminated = true;
+
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
+				llvm::APFloat Res(*fpWidthToSemantics(left->getWidth()),
+						left->getAPValue());
+				Res.add(
+						APFloat(*fpWidthToSemantics(right->getWidth()),
+								right->getAPValue()),
+						APFloat::rmNearestTiesToEven);
+#else
+				llvm::APFloat Res(left->getAPValue());
+				Res.add(APFloat(right->getAPValue()), APFloat::rmNearestTiesToEven);
+#endif
+				ref<Expr> result = ConstantExpr::alloc(Res.bitcastToAPInt());
+				bindLocal(ki, state, result,
+						eval(ki, 0, state).taint | eval(ki, 1, state).taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, left, right);
+				break;
+			}
+
+			case Instruction::FSub: {
+				ref<ConstantExpr> left = toConstant(state,
+						eval(ki, 0, state).value, "floating point");
+				ref<ConstantExpr> right = toConstant(state,
+						eval(ki, 1, state).value, "floating point");
+				if (!fpWidthToSemantics(left->getWidth())
+						|| !fpWidthToSemantics(right->getWidth()))
+					isTerminated = true;
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
+				llvm::APFloat Res(*fpWidthToSemantics(left->getWidth()),
+						left->getAPValue());
+				Res.subtract(
+						APFloat(*fpWidthToSemantics(right->getWidth()),
+								right->getAPValue()),
+						APFloat::rmNearestTiesToEven);
+#else
+				llvm::APFloat Res(left->getAPValue());
+				Res.subtract(APFloat(right->getAPValue()), APFloat::rmNearestTiesToEven);
+#endif
+				ref<Expr> result = ConstantExpr::alloc(Res.bitcastToAPInt());
+				bindLocal(ki, state, result,
+						eval(ki, 0, state).taint | eval(ki, 1, state).taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, left, right);
+				break;
+			}
+
+			case Instruction::FMul: {
+				ref<ConstantExpr> left = toConstant(state,
+						eval(ki, 0, state).value, "floating point");
+				ref<ConstantExpr> right = toConstant(state,
+						eval(ki, 1, state).value, "floating point");
+				if (!fpWidthToSemantics(left->getWidth())
+						|| !fpWidthToSemantics(right->getWidth()))
+					isTerminated = true;
+
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
+				llvm::APFloat Res(*fpWidthToSemantics(left->getWidth()),
+						left->getAPValue());
+				Res.multiply(
+						APFloat(*fpWidthToSemantics(right->getWidth()),
+								right->getAPValue()),
+						APFloat::rmNearestTiesToEven);
+#else
+				llvm::APFloat Res(left->getAPValue());
+				Res.multiply(APFloat(right->getAPValue()), APFloat::rmNearestTiesToEven);
+#endif
+				ref<Expr> result = ConstantExpr::alloc(Res.bitcastToAPInt());
+				bindLocal(ki, state, result,
+						eval(ki, 0, state).taint | eval(ki, 1, state).taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, left, right);
+				break;
+			}
+
+			case Instruction::FDiv: {
+				ref<ConstantExpr> left = toConstant(state,
+						eval(ki, 0, state).value, "floating point");
+				ref<ConstantExpr> right = toConstant(state,
+						eval(ki, 1, state).value, "floating point");
+				if (!fpWidthToSemantics(left->getWidth())
+						|| !fpWidthToSemantics(right->getWidth()))
+					isTerminated = true;
+
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
+				llvm::APFloat Res(*fpWidthToSemantics(left->getWidth()),
+						left->getAPValue());
+				Res.divide(
+						APFloat(*fpWidthToSemantics(right->getWidth()),
+								right->getAPValue()),
+						APFloat::rmNearestTiesToEven);
+#else
+				llvm::APFloat Res(left->getAPValue());
+				Res.divide(APFloat(right->getAPValue()), APFloat::rmNearestTiesToEven);
+#endif
+				ref<Expr> result = ConstantExpr::alloc(Res.bitcastToAPInt());
+				bindLocal(ki, state, result,
+						eval(ki, 0, state).taint | eval(ki, 1, state).taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, left, right);
+				break;
+			}
+
+			case Instruction::FRem: {
+				ref<ConstantExpr> left = toConstant(state,
+						eval(ki, 0, state).value, "floating point");
+				ref<ConstantExpr> right = toConstant(state,
+						eval(ki, 1, state).value, "floating point");
+				if (!fpWidthToSemantics(left->getWidth())
+						|| !fpWidthToSemantics(right->getWidth()))
+					isTerminated = true;
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
+				llvm::APFloat Res(*fpWidthToSemantics(left->getWidth()),
+						left->getAPValue());
+				Res.mod(
+						APFloat(*fpWidthToSemantics(right->getWidth()),
+								right->getAPValue()),
+						APFloat::rmNearestTiesToEven);
+#else
+				llvm::APFloat Res(left->getAPValue());
+				Res.mod(APFloat(right->getAPValue()), APFloat::rmNearestTiesToEven);
+#endif
+				ref<Expr> result = ConstantExpr::alloc(Res.bitcastToAPInt());
+				bindLocal(ki, state, result,
+						eval(ki, 0, state).taint | eval(ki, 1, state).taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, left, right);
+				break;
+			}
+
+			case Instruction::FPTrunc: {
+				FPTruncInst *fi = cast < FPTruncInst > (i);
+				Expr::Width resultType = getWidthForLLVMType(fi->getType());
+				ref<Expr> origArg = eval(ki, 0, state).value;
+				ref<ConstantExpr> arg = toConstant(state, origArg,
+						"floating point");
+				if (!fpWidthToSemantics(arg->getWidth())
+						|| resultType > arg->getWidth())
+					isTerminated = true;
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
+				llvm::APFloat Res(*fpWidthToSemantics(arg->getWidth()),
+						arg->getAPValue());
+#else
+				llvm::APFloat Res(arg->getAPValue());
+#endif
+				bool losesInfo = false;
+				Res.convert(*fpWidthToSemantics(resultType),
+						llvm::APFloat::rmNearestTiesToEven, &losesInfo);
+				ref<Expr> result = ConstantExpr::alloc(Res);
+				bindLocal(ki, state, result, eval(ki, 0, state).taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, origArg);
+				break;
+			}
+
+			case Instruction::FPExt: {
+				FPExtInst *fi = cast < FPExtInst > (i);
+				Expr::Width resultType = getWidthForLLVMType(fi->getType());
+				ref<Expr> origArg = eval(ki, 0, state).value;
+				ref<ConstantExpr> arg = toConstant(state, origArg,
+						"floating point");
+				if (!fpWidthToSemantics(arg->getWidth())
+						|| arg->getWidth() > resultType)
+					isTerminated = true;
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
+				llvm::APFloat Res(*fpWidthToSemantics(arg->getWidth()),
+						arg->getAPValue());
+#else
+				llvm::APFloat Res(arg->getAPValue());
+#endif
+				bool losesInfo = false;
+				Res.convert(*fpWidthToSemantics(resultType),
+						llvm::APFloat::rmNearestTiesToEven, &losesInfo);
+				ref<Expr> result = ConstantExpr::alloc(Res);
+				bindLocal(ki, state, result, eval(ki, 0, state).taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, origArg);
+				break;
+			}
+
+			case Instruction::FPToUI: {
+				FPToUIInst *fi = cast < FPToUIInst > (i);
+				Expr::Width resultType = getWidthForLLVMType(fi->getType());
+				ref<Expr> origArg = eval(ki, 0, state).value;
+				ref<ConstantExpr> arg = toConstant(state, origArg,
+						"floating point");
+				if (!fpWidthToSemantics(arg->getWidth()) || resultType > 64)
+					isTerminated = true;
+
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
+				llvm::APFloat Arg(*fpWidthToSemantics(arg->getWidth()),
+						arg->getAPValue());
+#else
+				llvm::APFloat Arg(arg->getAPValue());
+#endif
+				uint64_t value = 0;
+				bool isExact = true;
+				Arg.convertToInteger(&value, resultType, false,
+						llvm::APFloat::rmTowardZero, &isExact);
+				ref<Expr> result = ConstantExpr::alloc(value, resultType);
+				bindLocal(ki, state, result, eval(ki, 0, state).taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, origArg);
+				break;
+			}
+
+			case Instruction::FPToSI: {
+				FPToSIInst *fi = cast < FPToSIInst > (i);
+				Expr::Width resultType = getWidthForLLVMType(fi->getType());
+				ref<Expr> origArg = eval(ki, 0, state).value;
+				ref<ConstantExpr> arg = toConstant(state, origArg,
+						"floating point");
+				if (!fpWidthToSemantics(arg->getWidth()) || resultType > 64)
+					isTerminated = true;
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
+				llvm::APFloat Arg(*fpWidthToSemantics(arg->getWidth()),
+						arg->getAPValue());
+#else
+				llvm::APFloat Arg(arg->getAPValue());
+
+#endif
+				uint64_t value = 0;
+				bool isExact = true;
+				Arg.convertToInteger(&value, resultType, true,
+						llvm::APFloat::rmTowardZero, &isExact);
+				ref<Expr> result = ConstantExpr::alloc(value, resultType);
+				bindLocal(ki, state, result, eval(ki, 0, state).taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, origArg);
+				break;
+			}
+
+			case Instruction::UIToFP: {
+				UIToFPInst *fi = cast < UIToFPInst > (i);
+				Expr::Width resultType = getWidthForLLVMType(fi->getType());
+				ref<Expr> origArg = eval(ki, 0, state).value;
+				ref<ConstantExpr> arg = toConstant(state, origArg,
+						"floating point");
+				const llvm::fltSemantics *semantics = fpWidthToSemantics(
+						resultType);
+				if (!semantics)
+					isTerminated = true;
+				llvm::APFloat f(*semantics, 0);
+				f.convertFromAPInt(arg->getAPValue(), false,
+						llvm::APFloat::rmNearestTiesToEven);
+
+				ref<Expr> result = ConstantExpr::alloc(f);
+				bindLocal(ki, state, result, eval(ki, 0, state).taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, origArg);
+				break;
+			}
+
+			case Instruction::SIToFP: {
+				SIToFPInst *fi = cast < SIToFPInst > (i);
+				Expr::Width resultType = getWidthForLLVMType(fi->getType());
+				ref<Expr> origArg = eval(ki, 0, state).value;
+				ref<ConstantExpr> arg = toConstant(state, origArg,
+						"floating point");
+				const llvm::fltSemantics *semantics = fpWidthToSemantics(
+						resultType);
+				if (!semantics)
+					isTerminated = true;
+				llvm::APFloat f(*semantics, 0);
+				f.convertFromAPInt(arg->getAPValue(), true,
+						llvm::APFloat::rmNearestTiesToEven);
+
+				ref<Expr> result = ConstantExpr::alloc(f);
+				bindLocal(ki, state, result, eval(ki, 0, state).taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, origArg);
+				break;
+			}
+
+			case Instruction::FCmp: {
+				FCmpInst *fi = cast < FCmpInst > (i);
+				ref<ConstantExpr> left = toConstant(state,
+						eval(ki, 0, state).value, "floating point");
+				ref<ConstantExpr> right = toConstant(state,
+						eval(ki, 1, state).value, "floating point");
+				if (!fpWidthToSemantics(left->getWidth())
+						|| !fpWidthToSemantics(right->getWidth()))
+					isTerminated = true;
+
+#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
+				APFloat LHS(*fpWidthToSemantics(left->getWidth()),
+						left->getAPValue());
+				APFloat RHS(*fpWidthToSemantics(right->getWidth()),
+						right->getAPValue());
+#else
+				APFloat LHS(left->getAPValue());
+				APFloat RHS(right->getAPValue());
+#endif
+				APFloat::cmpResult CmpRes = LHS.compare(RHS);
+
+				bool Result = false;
+				switch (fi->getPredicate()) {
+				// Predicates which only care about whether or not the operands are NaNs.
+				case FCmpInst::FCMP_ORD:
+					Result = CmpRes != APFloat::cmpUnordered;
+					break;
+
+				case FCmpInst::FCMP_UNO:
+					Result = CmpRes == APFloat::cmpUnordered;
+					break;
+
+					// Ordered comparisons return false if either operand is NaN.  Unordered
+					// comparisons return true if either operand is NaN.
+				case FCmpInst::FCMP_UEQ:
+					if (CmpRes == APFloat::cmpUnordered) {
+						Result = true;
+						break;
+					}
+				case FCmpInst::FCMP_OEQ:
+					Result = CmpRes == APFloat::cmpEqual;
+					break;
+
+				case FCmpInst::FCMP_UGT:
+					if (CmpRes == APFloat::cmpUnordered) {
+						Result = true;
+						break;
+					}
+				case FCmpInst::FCMP_OGT:
+					Result = CmpRes == APFloat::cmpGreaterThan;
+					break;
+
+				case FCmpInst::FCMP_UGE:
+					if (CmpRes == APFloat::cmpUnordered) {
+						Result = true;
+						break;
+					}
+				case FCmpInst::FCMP_OGE:
+					Result = CmpRes == APFloat::cmpGreaterThan
+							|| CmpRes == APFloat::cmpEqual;
+					break;
+
+				case FCmpInst::FCMP_ULT:
+					if (CmpRes == APFloat::cmpUnordered) {
+						Result = true;
+						break;
+					}
+				case FCmpInst::FCMP_OLT:
+					Result = CmpRes == APFloat::cmpLessThan;
+					break;
+
+				case FCmpInst::FCMP_ULE:
+					if (CmpRes == APFloat::cmpUnordered) {
+						Result = true;
+						break;
+					}
+				case FCmpInst::FCMP_OLE:
+					Result = CmpRes == APFloat::cmpLessThan
+							|| CmpRes == APFloat::cmpEqual;
+					break;
+
+				case FCmpInst::FCMP_UNE:
+					Result = CmpRes == APFloat::cmpUnordered
+							|| CmpRes != APFloat::cmpEqual;
+					break;
+				case FCmpInst::FCMP_ONE:
+					Result = CmpRes != APFloat::cmpUnordered
+							&& CmpRes != APFloat::cmpEqual;
+					break;
+
+				default:
+					assert(0 && "Invalid FCMP predicate!");
+				case FCmpInst::FCMP_FALSE:
+					Result = false;
+					break;
+				case FCmpInst::FCMP_TRUE:
+					Result = true;
+					break;
+				}
+
+				ref<Expr> result = ConstantExpr::alloc(Result, Expr::Bool);
+				bindLocal(ki, state, result,
+						eval(ki, 0, state).taint | eval(ki, 1, state).taint);
+
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, left, right);
+				break;
+			}
+			case Instruction::InsertValue: {
+				KGEPInstruction *kgepi = static_cast<KGEPInstruction*>(ki);
+
+				ref<Expr> agg = eval(ki, 0, state).value;
+				ref<Expr> val = eval(ki, 1, state).value;
+
+				ref<Expr> l = NULL, r = NULL;
+				unsigned lOffset = kgepi->offset * 8, rOffset = kgepi->offset
+						* 8 + val->getWidth();
+
+				if (lOffset > 0)
+					l = ExtractExpr::create(agg, 0, lOffset);
+				if (rOffset < agg->getWidth())
+					r = ExtractExpr::create(agg, rOffset,
+							agg->getWidth() - rOffset);
+
+				ref<Expr> result;
+				if (!l.isNull() && !r.isNull())
+					result = ConcatExpr::create(r, ConcatExpr::create(val, l));
+				else if (!l.isNull())
+					result = ConcatExpr::create(val, l);
+				else if (!r.isNull())
+					result = ConcatExpr::create(r, val);
 				else
-					isFollowingPath = false;
+					result = val;
 
-				movedForward = true;
-				int cuttingPoint = 0;
-				for (unsigned j = depth; j < guilde.length(); j++)
-					if (guilde[j] == '1') {
-						cuttingPoint = j;
-						break;
-					}
+				bindLocal(ki, state, result,
+						eval(ki, 0, state).taint | eval(ki, 1, state).taint);
 
-				if (isFollowingPath) {
-					guilde = guilde.substr(0, depth)
-							+ guilde.substr(cuttingPoint + 1,
-									guilde.length() - cuttingPoint - 1);
-				} else {
-					guilde = guilde.substr(0, depth)
-							+ guilde.substr(cuttingPoint + 1,
-									guilde.length() - cuttingPoint - 1);
-					freezedLWCET = resultHSET.LWCET;
-				}
-				resultHSET.Path += chosenPath;
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, agg, val);
+				break;
+			}
+			case Instruction::ExtractValue: {
+				KGEPInstruction *kgepi = static_cast<KGEPInstruction*>(ki);
 
-			} else {
-				std::map<BasicBlock*, ref<Expr> > targets;
-				std::map<BasicBlock*, unsigned> targetsPosition;
-				ref<Expr> isDefault = ConstantExpr::alloc(1, Expr::Bool);
+				Cell agg = eval(ki, 0, state);
 
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 1)
-				for (SwitchInst::CaseIt i = si->case_begin(), e =
-						si->case_end(); i != e; ++i) {
-					ref<Expr> value = evalConstant(i.getCaseValue());
-#else
-					for (unsigned i=1, cases = si->getNumCases(); i<cases; ++i) {
-						ref<Expr> value = evalConstant(si->getCaseValue(i));
-#endif
-					ref<Expr> match = EqExpr::create(cond, value);
-					isDefault = AndExpr::create(isDefault,
-							Expr::createIsZero(match));
-					bool result;
-					bool success = solver->mayBeTrue(state, match, result);
-					assert(success && "FIXME: Unhandled solver failure");
-					(void) success;
-					if (result) {
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 1)
-						BasicBlock *caseSuccessor = i.getCaseSuccessor();
-						targetsPosition.insert(
-								std::make_pair(caseSuccessor,
-										i.getSuccessorIndex()));
-#else
-						BasicBlock *caseSuccessor = si->getSuccessor(i);
-						targetsPosition.insert(std::make_pair(caseSuccessor, i));
-#endif
-						std::map<BasicBlock*, ref<Expr> >::iterator it =
-								targets.insert(
-										std::make_pair(caseSuccessor,
-												ConstantExpr::alloc(0,
-														Expr::Bool))).first;
+				ref<Expr> result = ExtractExpr::create(agg.value,
+						kgepi->offset * 8, getWidthForLLVMType(i->getType()));
 
-						it->second = OrExpr::create(match, it->second);
-					}
-				}
-				bool res;
-				bool success = solver->mayBeTrue(state, isDefault, res);
-				assert(success && "FIXME: Unhandled solver failure");
-				(void) success;
-				//TN: Always add
-				//if (res)
-				targets.insert(std::make_pair(si->getDefaultDest(), isDefault));
-				targetsPosition.insert(std::make_pair(si->getDefaultDest(), 0));
+				bindLocal(ki, state, result, agg.taint);
 
-				std::vector<ref<Expr> > conditions;
-				for (std::map<BasicBlock*, ref<Expr> >::iterator it =
-						targets.begin(), ie = targets.end(); it != ie; ++it)
-					conditions.push_back(it->second);
-				///////////////////////////////
-				std::vector<ExecutionState*> branches;
-				branch(state, conditions, branches);
+				// Update dependency
+				if (INTERPOLATION_ENABLED)
+					txTree->execute(i, result, agg.value);
+				break;
+			}
 
-				HSETSummary maxHSET;
-				HSETSummary tempHSET;
-
-				bool isFollowingPath = true;
-				std::string chosingPath = "";
-				std::string maxPath = "";
-
-				isLeafNode = false;
-				if (HSETInfo.IsTurnOnNotification)
-					llvm::errs() << "Entering Switch" << "\n";
-				unsigned caseIndex;
-				int maxLWCET = -1;
-				//Todo Fix this point
-				std::vector<ExecutionState*>::iterator bit = branches.begin();
-				for (std::map<BasicBlock*, ref<Expr> >::iterator it =
-						targets.begin(), ie = targets.end(); it != ie; ++it) {
-
-					ExecutionState *es = *bit;
-					if (es) {
-						transferToBasicBlock(it->first, bb, *es);
-
-						caseIndex = (targetsPosition.find(it->first))->second;
-						chosingPath = "";
-						for (unsigned i = 0; i < caseIndex; i++)
-							chosingPath += '0';
-						chosingPath += '1';
-
-						if (depth + caseIndex < guilde.length())
-							for (unsigned i = 0; i <= caseIndex; i++) {
-								if (guilde[depth + i] != chosingPath[i]) {
-									isFollowingPath = false;
-									break;
-								}
-							}
-						else
-							isFollowingPath = false;
-
-						if (isFollowingPath) {
-							if (HSETInfo.IsTurnOnNotification)
-								llvm::errs() << "Following path with symbolic"
-										<< caseIndex << "\n";
-							tempHSET = runWithSymbolicExecution(*es, guilde,
-									depth + caseIndex + 1, abstractMethod,
-									false);
-							//resultHSET.LWCET += tempHSET.LWCET;
-
-						} else {
-							tempHSET = extractAlternativePath(*es, guilde,
-									depth, abstractMethod, chosingPath, false);
-						}
-
-						if (tempHSET.LWCET > maxLWCET)
-							maxLWCET = tempHSET.LWCET;
-
-						if (tempHSET.WCET > maxHSET.WCET
-								|| (tempHSET.WCET == maxHSET.WCET
-										&& tempHSET.isConcrete())) {
-							maxHSET = tempHSET.clone(0);
-							maxPath = chosingPath;
-						}
-					}
-					++bit;
-				}
-				resultHSET.updateNextNode(maxPath);
-				resultHSET.concat(maxHSET);
-				resultHSET.LWCET += maxLWCET;
+				// Other instructions...
+				// Unhandled
+			case Instruction::ExtractElement:
+			case Instruction::InsertElement:
+			case Instruction::ShuffleVector:
 				isTerminated = true;
-			}
-
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i);
-			break;
-		}
-		case Instruction::Unreachable:
-			// Note that this is not necessarily an internal bug, llvm will
-			// generate unreachable instructions in cases where it knows the
-			// program will crash. So it is effectively a SEGV or internal
-			// error.
-			isTerminated = true;
-			break;
-
-		case Instruction::Invoke:
-		case Instruction::Call: {
-			CallSite cs(i);
-			unsigned numArgs = cs.arg_size();
-			Value *fp = cs.getCalledValue();
-			Function *f = getTargetFunction(fp, state);
-
-			// Skip debug intrinsics, we can't evaluate their metadata arguments.
-			if (f && isDebugIntrinsic(f, kmodule))
-				break;
-
-			if (isa < InlineAsm > (fp)) {
-				isTerminated = true;
-				break;
-			}
-			// evaluate arguments
-			std::vector < std::pair<ref<Expr>, TaintSet> > arguments;
-			arguments.reserve(numArgs);
-
-			for (unsigned j = 0; j < numArgs; ++j) {
-				Cell cell = eval(ki, j + 1, state);
-				arguments.push_back(std::make_pair(cell.value, cell.taint));
-			}
-
-			if (f) {
-				const FunctionType *fType =
-						dyn_cast < FunctionType
-								> (cast < PointerType
-										> (f->getType())->getElementType());
-				const FunctionType *fpType = dyn_cast < FunctionType
-						> (cast < PointerType
-								> (fp->getType())->getElementType());
-
-				// special case the call with a bitcast case
-				if (fType != fpType) {
-					assert(fType && fpType && "unable to get function type");
-
-					// XXX check result coercion
-
-					// XXX this really needs thought and validation
-					unsigned i = 0;
-					for (std::vector<std::pair<ref<Expr>, TaintSet> >::iterator
-							ai = arguments.begin(), ie = arguments.end();
-							ai != ie; ++ai) {
-						Expr::Width to, from = (*ai).first->getWidth();
-
-						if (i < fType->getNumParams()) {
-							to = getWidthForLLVMType(fType->getParamType(i));
-
-							if (from != to) {
-								// XXX need to check other param attrs ?
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
-								bool isSExt = cs.paramHasAttr(i + 1,
-										llvm::Attribute::SExt);
-#elif LLVM_VERSION_CODE >= LLVM_VERSION(3, 2)
-								bool isSExt = cs.paramHasAttr(i+1, llvm::Attributes::SExt);
-#else
-								bool isSExt = cs.paramHasAttr(i+1, llvm::Attribute::SExt);
-#endif
-								if (isSExt) {
-									arguments[i].first = SExtExpr::create(
-											arguments[i].first, to);
-								} else {
-									arguments[i].first = ZExtExpr::create(
-											arguments[i].first, to);
-								}
-							}
-						}
-
-						i++;
-					}
-				}
-
-				if (f && f->isDeclaration()) {
-				} else {
-					//llvm::errs()<<"Push\n";
-					state.pushFuncDest(state.pc->dest);
-				}
-
-				executeCall(state, ki, f, arguments);
-				movedForward = true;
-				if (f->isDeclaration()) {
-					switch (f->getIntrinsicID()) {
-					case Intrinsic::not_intrinsic:
-						movedForward = false;
-						break;
-					default:
-						break;
-					}
-				}
-
-			} else {
-				ref<Expr> v = eval(ki, 0, state).value;
-
-				ExecutionState *free = &state;
-				bool hasInvalid = false, first = true;
-
-				/* XXX This is wasteful, no need to do a full evaluate since we
-				 have already got a value. But in the end the caches should
-				 handle it for us, albeit with some overhead. */
-				do {
-					ref<ConstantExpr> value;
-					bool success = solver->getValue(*free, v, value);
-					assert(success && "FIXME: Unhandled solver failure");
-					(void) success;
-					StatePair res = fork(*free, EqExpr::create(v, value), true);
-					if (res.first) {
-						uint64_t addr = value->getZExtValue();
-						if (legalFunctions.count(addr)) {
-							f = (Function*) addr;
-
-							// Don't give warning on unique resolution
-							if (res.second || !first)
-								klee_warning_once((void*) (unsigned long) addr,
-										"resolved symbolic function pointer to: %s",
-										f->getName().data());
-
-							executeCall(*res.first, ki, f, arguments);
-						} else {
-							if (!hasInvalid) {
-								isTerminated = true;
-								hasInvalid = true;
-							}
-						}
-					}
-
-					first = false;
-					free = res.second;
-				} while (free);
-			}
-
-			break;
-		}
-		case Instruction::PHI: {
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 0)
-			Cell result = eval(ki, state.incomingBBIndex, state);
-#else
-			Cell result = eval(ki, state.incomingBBIndex * 2, state);
-#endif
-			bindLocal(ki, state, result.value, result.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED) {
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 0)
-				interpTree->executePHI(i, state.incomingBBIndex, result.value);
-#else
-				interpTree->executePHI(i, state.incomingBBIndex * 2, result.value);
-#endif
-			}
-
-			break;
-		}
-
-			// Special instructions
-		case Instruction::Select: {
-			Cell cond = eval(ki, 0, state);
-			Cell tExpr = eval(ki, 1, state);
-			Cell fExpr = eval(ki, 2, state);
-			ref<Expr> result = SelectExpr::create(cond.value, tExpr.value,
-					fExpr.value);
-			bindLocal(ki, state, result,
-					cond.taint | tExpr.taint | fExpr.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, tExpr.value, fExpr.value);
-			break;
-		}
-
-		case Instruction::VAArg:
-			isTerminated = true;
-			break;
-
-			// Arithmetic / logical
-
-		case Instruction::Add: {
-			Cell left = eval(ki, 0, state);
-			Cell right = eval(ki, 1, state);
-			ref<Expr> result = AddExpr::create(left.value, right.value);
-			bindLocal(ki, state, result, left.taint | right.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, left.value, right.value);
-			break;
-		}
-
-		case Instruction::Sub: {
-			Cell left = eval(ki, 0, state);
-			Cell right = eval(ki, 1, state);
-			ref<Expr> result = SubExpr::create(left.value, right.value);
-			bindLocal(ki, state, result, left.taint | right.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, left.value, right.value);
-			break;
-		}
-
-		case Instruction::Mul: {
-			Cell left = eval(ki, 0, state);
-			Cell right = eval(ki, 1, state);
-			ref<Expr> result = MulExpr::create(left.value, right.value);
-			bindLocal(ki, state, result, left.taint | right.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, left.value, right.value);
-			break;
-		}
-
-		case Instruction::UDiv: {
-			Cell left = eval(ki, 0, state);
-			Cell right = eval(ki, 1, state);
-			ref<Expr> result = UDivExpr::create(left.value, right.value);
-			bindLocal(ki, state, result, left.taint | right.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, left.value, right.value);
-			break;
-		}
-
-		case Instruction::SDiv: {
-			Cell left = eval(ki, 0, state);
-			Cell right = eval(ki, 1, state);
-			ref<Expr> result = SDivExpr::create(left.value, right.value);
-			bindLocal(ki, state, result, left.taint | right.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, left.value, right.value);
-			break;
-		}
-
-		case Instruction::URem: {
-			Cell left = eval(ki, 0, state);
-			Cell right = eval(ki, 1, state);
-			ref<Expr> result = URemExpr::create(left.value, right.value);
-			bindLocal(ki, state, result, left.taint | right.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, left.value, right.value);
-			break;
-		}
-
-		case Instruction::SRem: {
-			Cell left = eval(ki, 0, state);
-			Cell right = eval(ki, 1, state);
-			ref<Expr> result = SRemExpr::create(left.value, right.value);
-			bindLocal(ki, state, result, left.taint | right.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, left.value, right.value);
-			break;
-		}
-
-		case Instruction::And: {
-			Cell left = eval(ki, 0, state);
-			Cell right = eval(ki, 1, state);
-			ref<Expr> result = AndExpr::create(left.value, right.value);
-			bindLocal(ki, state, result, left.taint | right.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, left.value, right.value);
-			break;
-		}
-
-		case Instruction::Or: {
-			Cell left = eval(ki, 0, state);
-			Cell right = eval(ki, 1, state);
-			ref<Expr> result = OrExpr::create(left.value, right.value);
-			bindLocal(ki, state, result, left.taint | right.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, left.value, right.value);
-			break;
-		}
-
-		case Instruction::Xor: {
-			Cell left = eval(ki, 0, state);
-			Cell right = eval(ki, 1, state);
-			ref<Expr> result = XorExpr::create(left.value, right.value);
-			bindLocal(ki, state, result, left.taint | right.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, left.value, right.value);
-			break;
-		}
-
-		case Instruction::Shl: {
-			Cell left = eval(ki, 0, state);
-			Cell right = eval(ki, 1, state);
-			ref<Expr> result = ShlExpr::create(left.value, right.value);
-			bindLocal(ki, state, result, left.taint | right.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, left.value, right.value);
-			break;
-		}
-
-		case Instruction::LShr: {
-			Cell left = eval(ki, 0, state);
-			Cell right = eval(ki, 1, state);
-			ref<Expr> result = LShrExpr::create(left.value, right.value);
-			bindLocal(ki, state, result, left.taint | right.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, left.value, right.value);
-			break;
-		}
-
-		case Instruction::AShr: {
-			Cell left = eval(ki, 0, state);
-			Cell right = eval(ki, 1, state);
-			ref<Expr> result = AShrExpr::create(left.value, right.value);
-			bindLocal(ki, state, result, left.taint | right.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, left.value, right.value);
-			break;
-		}
-
-			// Compare
-
-		case Instruction::ICmp: {
-			CmpInst *ci = cast < CmpInst > (i);
-			ICmpInst *ii = cast < ICmpInst > (ci);
-			Cell left = eval(ki, 0, state);
-			Cell right = eval(ki, 1, state);
-			ref<Expr> result;
-
-			switch (ii->getPredicate()) {
-			case ICmpInst::ICMP_EQ: {
-				result = EqExpr::create(left.value, right.value);
-				break;
-			}
-
-			case ICmpInst::ICMP_NE: {
-				result = NeExpr::create(left.value, right.value);
-				break;
-			}
-
-			case ICmpInst::ICMP_UGT: {
-				result = UgtExpr::create(left.value, right.value);
-				break;
-			}
-
-			case ICmpInst::ICMP_UGE: {
-				result = UgeExpr::create(left.value, right.value);
-				break;
-			}
-
-			case ICmpInst::ICMP_ULT: {
-				result = UltExpr::create(left.value, right.value);
-				break;
-			}
-
-			case ICmpInst::ICMP_ULE: {
-				result = UleExpr::create(left.value, right.value);
-				break;
-			}
-
-			case ICmpInst::ICMP_SGT: {
-				result = SgtExpr::create(left.value, right.value);
-				break;
-			}
-
-			case ICmpInst::ICMP_SGE: {
-				result = SgeExpr::create(left.value, right.value);
-				break;
-			}
-
-			case ICmpInst::ICMP_SLT: {
-				result = SltExpr::create(left.value, right.value);
-				break;
-			}
-
-			case ICmpInst::ICMP_SLE: {
-				result = SleExpr::create(left.value, right.value);
-				break;
-			}
-
-			default:
-				terminateStateOnExecError(state, "invalid ICmp predicate");
-			}
-
-			bindLocal(ki, state, result, left.taint | right.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, left.value, right.value);
-			break;
-		}
-
-			// Memory instructions...
-		case Instruction::Alloca: {
-			AllocaInst *ai = cast < AllocaInst > (i);
-			unsigned elementSize = kmodule->targetData->getTypeStoreSize(
-					ai->getAllocatedType());
-			ref<Expr> size = Expr::createPointer(elementSize);
-			if (ai->isArrayAllocation()) {
-				ref<Expr> count = eval(ki, 0, state).value;
-				count = Expr::createZExtToPointerWidth(count);
-				size = MulExpr::create(size, count);
-			}
-			bool isLocal = i->getOpcode() == Instruction::Alloca;
-			executeAlloc(state, size, isLocal, ki);
-			break;
-		}
-
-		case Instruction::Load: {
-			executeMemoryOperation(state, false, eval(ki, 0, state).value, 0,
-					ki, eval(ki, 0, state).taint, 0);
-			break;
-		}
-		case Instruction::Store: {
-			executeMemoryOperation(state, true, eval(ki, 1, state).value,
-					eval(ki, 0, state).value, ki, eval(ki, 1, state).taint,
-					eval(ki, 0, state).taint);
-			break;
-		}
-
-		case Instruction::GetElementPtr: {
-			KGEPInstruction *kgepi = static_cast<KGEPInstruction*>(ki);
-			Cell base = eval(ki, 0, state);
-			TaintSet taint = base.taint;
-			ref<Expr> result = base.value;
-
-			ref<Expr> oldResult = result;
-			for (std::vector<std::pair<unsigned, uint64_t> >::iterator it =
-					kgepi->indices.begin(), ie = kgepi->indices.end(); it != ie;
-					++it) {
-				uint64_t elementSize = it->second;
-
-				Cell index = eval(ki, it->first, state);
-				result = AddExpr::create(result,
-						MulExpr::create(
-								Expr::createSExtToPointerWidth(index.value),
-								Expr::createPointer(elementSize)));
-				taint |= index.taint;
-			}
-			if (kgepi->offset)
-				result = AddExpr::create(result,
-						Expr::createPointer(kgepi->offset));
-
-			bindLocal(ki, state, result, taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, oldResult);
-			break;
-		}
-
-			// Conversion
-		case Instruction::Trunc: {
-			CastInst *ci = cast < CastInst > (i);
-			Cell arg = eval(ki, 0, state);
-			ref<Expr> result = ExtractExpr::create(arg.value, 0,
-					getWidthForLLVMType(ci->getType()));
-			bindLocal(ki, state, result, arg.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result);
-			break;
-		}
-		case Instruction::ZExt: {
-			CastInst *ci = cast < CastInst > (i);
-			Cell arg = eval(ki, 0, state);
-			ref<Expr> result = ZExtExpr::create(arg.value,
-					getWidthForLLVMType(ci->getType()));
-			bindLocal(ki, state, result, arg.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result);
-			break;
-		}
-		case Instruction::SExt: {
-			CastInst *ci = cast < CastInst > (i);
-			Cell arg = eval(ki, 0, state);
-			ref<Expr> result = SExtExpr::create(arg.value,
-					getWidthForLLVMType(ci->getType()));
-			bindLocal(ki, state, result, arg.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result);
-			break;
-		}
-
-		case Instruction::IntToPtr: {
-			CastInst *ci = cast < CastInst > (i);
-			Expr::Width pType = getWidthForLLVMType(ci->getType());
-			Cell arg = eval(ki, 0, state);
-			ref<Expr> result = ZExtExpr::create(arg.value, pType);
-			bindLocal(ki, state, result, arg.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result);
-			break;
-		}
-		case Instruction::PtrToInt: {
-			CastInst *ci = cast < CastInst > (i);
-			Expr::Width iType = getWidthForLLVMType(ci->getType());
-			Cell arg = eval(ki, 0, state);
-			ref<Expr> result = ZExtExpr::create(arg.value, iType);
-			bindLocal(ki, state, result, arg.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result);
-			break;
-		}
-
-		case Instruction::BitCast: {
-			Cell result = eval(ki, 0, state);
-			bindLocal(ki, state, result.value, result.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result.value);
-			break;
-		}
-
-			// Floating point instructions
-
-		case Instruction::FAdd: {
-			ref<ConstantExpr> left = toConstant(state, eval(ki, 0, state).value,
-					"floating point");
-			ref<ConstantExpr> right = toConstant(state,
-					eval(ki, 1, state).value, "floating point");
-			if (!fpWidthToSemantics(left->getWidth())
-					|| !fpWidthToSemantics(right->getWidth()))
-				isTerminated = true;
-
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
-			llvm::APFloat Res(*fpWidthToSemantics(left->getWidth()),
-					left->getAPValue());
-			Res.add(
-					APFloat(*fpWidthToSemantics(right->getWidth()),
-							right->getAPValue()), APFloat::rmNearestTiesToEven);
-#else
-			llvm::APFloat Res(left->getAPValue());
-			Res.add(APFloat(right->getAPValue()), APFloat::rmNearestTiesToEven);
-#endif
-			ref<Expr> result = ConstantExpr::alloc(Res.bitcastToAPInt());
-			bindLocal(ki, state, result,
-					eval(ki, 0, state).taint | eval(ki, 1, state).taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, left, right);
-			break;
-		}
-
-		case Instruction::FSub: {
-			ref<ConstantExpr> left = toConstant(state, eval(ki, 0, state).value,
-					"floating point");
-			ref<ConstantExpr> right = toConstant(state,
-					eval(ki, 1, state).value, "floating point");
-			if (!fpWidthToSemantics(left->getWidth())
-					|| !fpWidthToSemantics(right->getWidth()))
-				isTerminated = true;
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
-			llvm::APFloat Res(*fpWidthToSemantics(left->getWidth()),
-					left->getAPValue());
-			Res.subtract(
-					APFloat(*fpWidthToSemantics(right->getWidth()),
-							right->getAPValue()), APFloat::rmNearestTiesToEven);
-#else
-			llvm::APFloat Res(left->getAPValue());
-			Res.subtract(APFloat(right->getAPValue()), APFloat::rmNearestTiesToEven);
-#endif
-			ref<Expr> result = ConstantExpr::alloc(Res.bitcastToAPInt());
-			bindLocal(ki, state, result,
-					eval(ki, 0, state).taint | eval(ki, 1, state).taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, left, right);
-			break;
-		}
-
-		case Instruction::FMul: {
-			ref<ConstantExpr> left = toConstant(state, eval(ki, 0, state).value,
-					"floating point");
-			ref<ConstantExpr> right = toConstant(state,
-					eval(ki, 1, state).value, "floating point");
-			if (!fpWidthToSemantics(left->getWidth())
-					|| !fpWidthToSemantics(right->getWidth()))
-				isTerminated = true;
-
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
-			llvm::APFloat Res(*fpWidthToSemantics(left->getWidth()),
-					left->getAPValue());
-			Res.multiply(
-					APFloat(*fpWidthToSemantics(right->getWidth()),
-							right->getAPValue()), APFloat::rmNearestTiesToEven);
-#else
-			llvm::APFloat Res(left->getAPValue());
-			Res.multiply(APFloat(right->getAPValue()), APFloat::rmNearestTiesToEven);
-#endif
-			ref<Expr> result = ConstantExpr::alloc(Res.bitcastToAPInt());
-			bindLocal(ki, state, result,
-					eval(ki, 0, state).taint | eval(ki, 1, state).taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, left, right);
-			break;
-		}
-
-		case Instruction::FDiv: {
-			ref<ConstantExpr> left = toConstant(state, eval(ki, 0, state).value,
-					"floating point");
-			ref<ConstantExpr> right = toConstant(state,
-					eval(ki, 1, state).value, "floating point");
-			if (!fpWidthToSemantics(left->getWidth())
-					|| !fpWidthToSemantics(right->getWidth()))
-				isTerminated = true;
-
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
-			llvm::APFloat Res(*fpWidthToSemantics(left->getWidth()),
-					left->getAPValue());
-			Res.divide(
-					APFloat(*fpWidthToSemantics(right->getWidth()),
-							right->getAPValue()), APFloat::rmNearestTiesToEven);
-#else
-			llvm::APFloat Res(left->getAPValue());
-			Res.divide(APFloat(right->getAPValue()), APFloat::rmNearestTiesToEven);
-#endif
-			ref<Expr> result = ConstantExpr::alloc(Res.bitcastToAPInt());
-			bindLocal(ki, state, result,
-					eval(ki, 0, state).taint | eval(ki, 1, state).taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, left, right);
-			break;
-		}
-
-		case Instruction::FRem: {
-			ref<ConstantExpr> left = toConstant(state, eval(ki, 0, state).value,
-					"floating point");
-			ref<ConstantExpr> right = toConstant(state,
-					eval(ki, 1, state).value, "floating point");
-			if (!fpWidthToSemantics(left->getWidth())
-					|| !fpWidthToSemantics(right->getWidth()))
-				isTerminated = true;
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
-			llvm::APFloat Res(*fpWidthToSemantics(left->getWidth()),
-					left->getAPValue());
-			Res.mod(
-					APFloat(*fpWidthToSemantics(right->getWidth()),
-							right->getAPValue()), APFloat::rmNearestTiesToEven);
-#else
-			llvm::APFloat Res(left->getAPValue());
-			Res.mod(APFloat(right->getAPValue()), APFloat::rmNearestTiesToEven);
-#endif
-			ref<Expr> result = ConstantExpr::alloc(Res.bitcastToAPInt());
-			bindLocal(ki, state, result,
-					eval(ki, 0, state).taint | eval(ki, 1, state).taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, left, right);
-			break;
-		}
-
-		case Instruction::FPTrunc: {
-			FPTruncInst *fi = cast < FPTruncInst > (i);
-			Expr::Width resultType = getWidthForLLVMType(fi->getType());
-			ref<ConstantExpr> arg = toConstant(state, eval(ki, 0, state).value,
-					"floating point");
-			if (!fpWidthToSemantics(arg->getWidth())
-					|| resultType > arg->getWidth())
-				isTerminated = true;
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
-			llvm::APFloat Res(*fpWidthToSemantics(arg->getWidth()),
-					arg->getAPValue());
-#else
-			llvm::APFloat Res(arg->getAPValue());
-#endif
-			bool losesInfo = false;
-			Res.convert(*fpWidthToSemantics(resultType),
-					llvm::APFloat::rmNearestTiesToEven, &losesInfo);
-			ref<Expr> result = ConstantExpr::alloc(Res);
-			bindLocal(ki, state, result, eval(ki, 0, state).taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result);
-			break;
-		}
-
-		case Instruction::FPExt: {
-			FPExtInst *fi = cast < FPExtInst > (i);
-			Expr::Width resultType = getWidthForLLVMType(fi->getType());
-			ref<ConstantExpr> arg = toConstant(state, eval(ki, 0, state).value,
-					"floating point");
-			if (!fpWidthToSemantics(arg->getWidth())
-					|| arg->getWidth() > resultType)
-				isTerminated = true;
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
-			llvm::APFloat Res(*fpWidthToSemantics(arg->getWidth()),
-					arg->getAPValue());
-#else
-			llvm::APFloat Res(arg->getAPValue());
-#endif
-			bool losesInfo = false;
-			Res.convert(*fpWidthToSemantics(resultType),
-					llvm::APFloat::rmNearestTiesToEven, &losesInfo);
-			ref<Expr> result = ConstantExpr::alloc(Res);
-			bindLocal(ki, state, result, eval(ki, 0, state).taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result);
-			break;
-		}
-
-		case Instruction::FPToUI: {
-			FPToUIInst *fi = cast < FPToUIInst > (i);
-			Expr::Width resultType = getWidthForLLVMType(fi->getType());
-			ref<ConstantExpr> arg = toConstant(state, eval(ki, 0, state).value,
-					"floating point");
-			if (!fpWidthToSemantics(arg->getWidth()) || resultType > 64)
-				isTerminated = true;
-
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
-			llvm::APFloat Arg(*fpWidthToSemantics(arg->getWidth()),
-					arg->getAPValue());
-#else
-			llvm::APFloat Arg(arg->getAPValue());
-#endif
-			uint64_t value = 0;
-			bool isExact = true;
-			Arg.convertToInteger(&value, resultType, false,
-					llvm::APFloat::rmTowardZero, &isExact);
-			ref<Expr> result = ConstantExpr::alloc(value, resultType);
-			bindLocal(ki, state, result, eval(ki, 0, state).taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result);
-			break;
-		}
-
-		case Instruction::FPToSI: {
-			FPToSIInst *fi = cast < FPToSIInst > (i);
-			Expr::Width resultType = getWidthForLLVMType(fi->getType());
-			ref<ConstantExpr> arg = toConstant(state, eval(ki, 0, state).value,
-					"floating point");
-			if (!fpWidthToSemantics(arg->getWidth()) || resultType > 64)
-				isTerminated = true;
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
-			llvm::APFloat Arg(*fpWidthToSemantics(arg->getWidth()),
-					arg->getAPValue());
-#else
-			llvm::APFloat Arg(arg->getAPValue());
-
-#endif
-			uint64_t value = 0;
-			bool isExact = true;
-			Arg.convertToInteger(&value, resultType, true,
-					llvm::APFloat::rmTowardZero, &isExact);
-			ref<Expr> result = ConstantExpr::alloc(value, resultType);
-			bindLocal(ki, state, result, eval(ki, 0, state).taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result);
-			break;
-		}
-
-		case Instruction::UIToFP: {
-			UIToFPInst *fi = cast < UIToFPInst > (i);
-			Expr::Width resultType = getWidthForLLVMType(fi->getType());
-			ref<ConstantExpr> arg = toConstant(state, eval(ki, 0, state).value,
-					"floating point");
-			const llvm::fltSemantics *semantics = fpWidthToSemantics(
-					resultType);
-			if (!semantics)
-				isTerminated = true;
-			llvm::APFloat f(*semantics, 0);
-			f.convertFromAPInt(arg->getAPValue(), false,
-					llvm::APFloat::rmNearestTiesToEven);
-
-			ref<Expr> result = ConstantExpr::alloc(f);
-			bindLocal(ki, state, result, eval(ki, 0, state).taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result);
-			break;
-		}
-
-		case Instruction::SIToFP: {
-			SIToFPInst *fi = cast < SIToFPInst > (i);
-			Expr::Width resultType = getWidthForLLVMType(fi->getType());
-			ref<ConstantExpr> arg = toConstant(state, eval(ki, 0, state).value,
-					"floating point");
-			const llvm::fltSemantics *semantics = fpWidthToSemantics(
-					resultType);
-			if (!semantics)
-				isTerminated = true;
-			llvm::APFloat f(*semantics, 0);
-			f.convertFromAPInt(arg->getAPValue(), true,
-					llvm::APFloat::rmNearestTiesToEven);
-
-			ref<Expr> result = ConstantExpr::alloc(f);
-			bindLocal(ki, state, result, eval(ki, 0, state).taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result);
-			break;
-		}
-
-		case Instruction::FCmp: {
-			FCmpInst *fi = cast < FCmpInst > (i);
-			ref<ConstantExpr> left = toConstant(state, eval(ki, 0, state).value,
-					"floating point");
-			ref<ConstantExpr> right = toConstant(state,
-					eval(ki, 1, state).value, "floating point");
-			if (!fpWidthToSemantics(left->getWidth())
-					|| !fpWidthToSemantics(right->getWidth()))
-				isTerminated = true;
-
-#if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
-			APFloat LHS(*fpWidthToSemantics(left->getWidth()),
-					left->getAPValue());
-			APFloat RHS(*fpWidthToSemantics(right->getWidth()),
-					right->getAPValue());
-#else
-			APFloat LHS(left->getAPValue());
-			APFloat RHS(right->getAPValue());
-#endif
-			APFloat::cmpResult CmpRes = LHS.compare(RHS);
-
-			bool Result = false;
-			switch (fi->getPredicate()) {
-			// Predicates which only care about whether or not the operands are NaNs.
-			case FCmpInst::FCMP_ORD:
-				Result = CmpRes != APFloat::cmpUnordered;
-				break;
-
-			case FCmpInst::FCMP_UNO:
-				Result = CmpRes == APFloat::cmpUnordered;
-				break;
-
-				// Ordered comparisons return false if either operand is NaN.  Unordered
-				// comparisons return true if either operand is NaN.
-			case FCmpInst::FCMP_UEQ:
-				if (CmpRes == APFloat::cmpUnordered) {
-					Result = true;
-					break;
-				}
-			case FCmpInst::FCMP_OEQ:
-				Result = CmpRes == APFloat::cmpEqual;
-				break;
-
-			case FCmpInst::FCMP_UGT:
-				if (CmpRes == APFloat::cmpUnordered) {
-					Result = true;
-					break;
-				}
-			case FCmpInst::FCMP_OGT:
-				Result = CmpRes == APFloat::cmpGreaterThan;
-				break;
-
-			case FCmpInst::FCMP_UGE:
-				if (CmpRes == APFloat::cmpUnordered) {
-					Result = true;
-					break;
-				}
-			case FCmpInst::FCMP_OGE:
-				Result = CmpRes == APFloat::cmpGreaterThan
-						|| CmpRes == APFloat::cmpEqual;
-				break;
-
-			case FCmpInst::FCMP_ULT:
-				if (CmpRes == APFloat::cmpUnordered) {
-					Result = true;
-					break;
-				}
-			case FCmpInst::FCMP_OLT:
-				Result = CmpRes == APFloat::cmpLessThan;
-				break;
-
-			case FCmpInst::FCMP_ULE:
-				if (CmpRes == APFloat::cmpUnordered) {
-					Result = true;
-					break;
-				}
-			case FCmpInst::FCMP_OLE:
-				Result = CmpRes == APFloat::cmpLessThan
-						|| CmpRes == APFloat::cmpEqual;
-				break;
-
-			case FCmpInst::FCMP_UNE:
-				Result = CmpRes == APFloat::cmpUnordered
-						|| CmpRes != APFloat::cmpEqual;
-				break;
-			case FCmpInst::FCMP_ONE:
-				Result = CmpRes != APFloat::cmpUnordered
-						&& CmpRes != APFloat::cmpEqual;
 				break;
 
 			default:
-				assert(0 && "Invalid FCMP predicate!");
-			case FCmpInst::FCMP_FALSE:
-				Result = false;
-				break;
-			case FCmpInst::FCMP_TRUE:
-				Result = true;
+				isTerminated = true;
 				break;
 			}
 
-			ref<Expr> result = ConstantExpr::alloc(Result, Expr::Bool);
-			bindLocal(ki, state, result,
-					eval(ki, 0, state).taint | eval(ki, 1, state).taint);
+			if (isTerminated || HSETInfo.TempTerminateMark) {
+				break;
+			} else {
 
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, left, right);
-			break;
-		}
-		case Instruction::InsertValue: {
-			KGEPInstruction *kgepi = static_cast<KGEPInstruction*>(ki);
-
-			ref<Expr> agg = eval(ki, 0, state).value;
-			ref<Expr> val = eval(ki, 1, state).value;
-
-			ref<Expr> l = NULL, r = NULL;
-			unsigned lOffset = kgepi->offset * 8, rOffset = kgepi->offset * 8
-					+ val->getWidth();
-
-			if (lOffset > 0)
-				l = ExtractExpr::create(agg, 0, lOffset);
-			if (rOffset < agg->getWidth())
-				r = ExtractExpr::create(agg, rOffset,
-						agg->getWidth() - rOffset);
-
-			ref<Expr> result;
-			if (!l.isNull() && !r.isNull())
-				result = ConcatExpr::create(r, ConcatExpr::create(val, l));
-			else if (!l.isNull())
-				result = ConcatExpr::create(val, l);
-			else if (!r.isNull())
-				result = ConcatExpr::create(r, val);
-			else
-				result = val;
-
-			bindLocal(ki, state, result,
-					eval(ki, 0, state).taint | eval(ki, 1, state).taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result, agg, val);
-			break;
-		}
-		case Instruction::ExtractValue: {
-			KGEPInstruction *kgepi = static_cast<KGEPInstruction*>(ki);
-
-			Cell agg = eval(ki, 0, state);
-
-			ref<Expr> result = ExtractExpr::create(agg.value, kgepi->offset * 8,
-					getWidthForLLVMType(i->getType()));
-
-			bindLocal(ki, state, result, agg.taint);
-
-			// Update dependency
-			if (INTERPOLATION_ENABLED)
-				interpTree->execute(i, result);
-			break;
-		}
-
-			// Other instructions...
-			// Unhandled
-		case Instruction::ExtractElement:
-		case Instruction::InsertElement:
-		case Instruction::ShuffleVector:
-			isTerminated = true;
-			break;
-
-		default:
-			isTerminated = true;
-			break;
-		}
-
-		if (isTerminated || HSETInfo.TempTerminateMark) {
-			break;
-		} else {
-
-			if (!movedForward) {
-				state.prevPC = state.pc;
-				++state.pc;
+				if (!movedForward) {
+					state.prevPC = state.pc;
+					++state.pc;
+				}
 			}
 		}
-	}
+	//}
 
 	if ((depth - 1) >= 0) {
 		std::stringstream iss;
@@ -5221,6 +5465,13 @@ Executor::HSETSummary Executor::runWithSymbolicExecution(ExecutionState &state,
 			} else {
 				++HSETInfo.NumberExactInternalNode;
 			}
+
+			// *Next Step* : Integrate Interpolant
+			// a. Saving info
+			//     Need add code to save HSET info to INode or subsumptionTableEntry
+			//if (INTERPOLATION_ENABLED)
+			//	txTree->remove(state.txTreeNode);
+
 		}
 
 	}
@@ -5417,7 +5668,7 @@ Executor::HSETSummary Executor::extractAlternativePath(ExecutionState &state,
 	return result;
 }
 
-std::string Executor::getAddressInfo(ExecutionState &state,
+std::string Executor::getAddressInfo(ExecutionState & state,
 		ref<Expr> address) const {
 	std::string Str;
 	llvm::raw_string_ostream info(Str);
@@ -5729,8 +5980,8 @@ int Executor::calculateTotalTime(ExecutionState &state) {
 /* End HSET Methods*/
 
 void Executor::terminateState(ExecutionState &state) {
-	if (replayOut && replayPosition != replayOut->numObjects) {
-		klee_warning_once(replayOut,
+	if (replayKTest && replayPosition != replayKTest->numObjects) {
+		klee_warning_once(replayKTest,
 				"replay did not consume all objects in test input.");
 	}
 
@@ -5757,11 +6008,12 @@ void Executor::terminateState(ExecutionState &state) {
 
 	interpreterHandler->incPathsExplored();
 
-	std::set<ExecutionState*>::iterator it = addedStates.find(&state);
+	std::vector<ExecutionState *>::iterator it = std::find(addedStates.begin(),
+			addedStates.end(), &state);
 	if (it == addedStates.end()) {
 		state.pc = state.prevPC;
 
-		removedStates.insert(&state);
+		removedStates.push_back(&state);
 	} else {
 		// never reached searcher, just delete immediately
 		std::map<ExecutionState*, std::vector<SeedInfo> >::iterator it3 =
@@ -5772,7 +6024,7 @@ void Executor::terminateState(ExecutionState &state) {
 		processTree->remove(state.ptreeNode);
 
 		if (INTERPOLATION_ENABLED)
-			interpTree->remove(state.itreeNode);
+			txTree->remove(state.txTreeNode);
 		delete &state;
 	}
 }
@@ -5780,21 +6032,33 @@ void Executor::terminateState(ExecutionState &state) {
 void Executor::terminateStateOnSubsumption(ExecutionState &state) {
 	assert(INTERPOLATION_ENABLED);
 
-// Implementationwise, basically the same as terminateStateEarly method,
-// but with different statistics functions called, and empty error
-// message as this is not an error.
+	// Implementationwise, basically the same as terminateStateEarly method,
+	// but with different statistics functions called, and empty error
+	// message as this is not an error.
 	interpreterHandler->incSubsumptionTermination();
-	if (!OnlyOutputStatesCoveringNew || state.coveredNew
-			|| (AlwaysOutputSeeds && seedMap.count(&state))) {
+	interpreterHandler->incInstructionsDepthOnSubsumption(state.depth);
+	interpreterHandler->incTotalInstructionsOnSubsumption(
+			state.txTreeNode->getInstructionsDepth());
+
+#ifdef ENABLE_Z3
+	if (!NoSubsumedTest && (!OnlyOutputStatesCoveringNew || state.coveredNew ||
+					(AlwaysOutputSeeds && seedMap.count(&state)))) {
 		interpreterHandler->incSubsumptionTerminationTest();
 		interpreterHandler->processTestCase(state, 0, "early");
 	}
+#endif
 	terminateState(state);
 }
 
 void Executor::terminateStateEarly(ExecutionState &state,
 		const Twine &message) {
 	interpreterHandler->incEarlyTermination();
+	if (INTERPOLATION_ENABLED) {
+		interpreterHandler->incBranchingDepthOnEarlyTermination(state.depth);
+		interpreterHandler->incInstructionsDepthOnEarlyTermination(
+				state.txTreeNode->getInstructionsDepth());
+	}
+
 	if (!OnlyOutputStatesCoveringNew || state.coveredNew
 			|| (AlwaysOutputSeeds && seedMap.count(&state))) {
 		interpreterHandler->incEarlyTerminationTest();
@@ -5807,6 +6071,12 @@ void Executor::terminateStateEarly(ExecutionState &state,
 
 void Executor::terminateStateOnExit(ExecutionState &state) {
 	interpreterHandler->incExitTermination();
+	if (INTERPOLATION_ENABLED) {
+		interpreterHandler->incBranchingDepthOnExitTermination(state.depth);
+		interpreterHandler->incTotalInstructionsOnExit(
+				state.txTreeNode->getInstructionsDepth());
+	}
+
 	if (!OnlyOutputStatesCoveringNew || state.coveredNew
 			|| (AlwaysOutputSeeds && seedMap.count(&state))) {
 		interpreterHandler->incExitTerminationTest();
@@ -5827,12 +6097,12 @@ void Executor::terminateStateOnExit(ExecutionState &state) {
 
 const InstructionInfo & Executor::getLastNonKleeInternalInstruction(
 		const ExecutionState &state, Instruction ** lastInstruction) {
-// unroll the stack of the applications state and find
-// the last instruction which is not inside a KLEE internal function
+	// unroll the stack of the applications state and find
+	// the last instruction which is not inside a KLEE internal function
 	ExecutionState::stack_ty::const_reverse_iterator it = state.stack.rbegin(),
 			itE = state.stack.rend();
 
-// don't check beyond the outermost function (i.e. main())
+	// don't check beyond the outermost function (i.e. main())
 	itE--;
 
 	const InstructionInfo * ii = 0;
@@ -5844,9 +6114,9 @@ const InstructionInfo & Executor::getLastNonKleeInternalInstruction(
 		//  been called from an internal function.
 	}
 
-// Wind up the stack and check if we are in a KLEE internal function.
-// We visit the entire stack because we want to return a CallInstruction
-// that was not reached via any KLEE internal functions.
+	// Wind up the stack and check if we are in a KLEE internal function.
+	// We visit the entire stack because we want to return a CallInstruction
+	// that was not reached via any KLEE internal functions.
 	for (; it != itE; ++it) {
 		// check calling instruction and if it is contained in a KLEE internal function
 		const Function * f = (*it->caller).inst->getParent()->getParent();
@@ -5867,10 +6137,30 @@ const InstructionInfo & Executor::getLastNonKleeInternalInstruction(
 	}
 	return *ii;
 }
+
+bool Executor::shouldExitOn(enum TerminateReason termReason) {
+	std::vector<TerminateReason>::iterator s = ExitOnErrorType.begin();
+	std::vector<TerminateReason>::iterator e = ExitOnErrorType.end();
+
+	for (; s != e; ++s)
+		if (termReason == *s)
+			return true;
+
+	return false;
+}
+
 void Executor::terminateStateOnError(ExecutionState &state,
-		const llvm::Twine &messaget, const char *suffix,
-		const llvm::Twine &info) {
+		const llvm::Twine &messaget, enum TerminateReason termReason,
+		const char *suffix, const llvm::Twine &info) {
 	interpreterHandler->incErrorTermination();
+	if (INTERPOLATION_ENABLED) {
+		interpreterHandler->incBranchingDepthOnErrorTermination(state.depth);
+		interpreterHandler->incInstructionsDepthOnErrorTermination(
+				state.txTreeNode->getInstructionsDepth());
+		if (termReason == Executor::Assert) {
+			TxTreeGraph::setAssertionError(state);
+		}
+	}
 
 	std::string message = messaget.str();
 	static std::set<std::pair<Instruction*, std::string> > emittedErrors;
@@ -5905,11 +6195,21 @@ void Executor::terminateStateOnError(ExecutionState &state,
 		if (info_str != "")
 			msg << "Info: \n" << info_str;
 
+		std::string suffix_buf;
+		if (!suffix) {
+			suffix_buf = TerminateReasonNames[termReason];
+			suffix_buf += ".err";
+			suffix = suffix_buf.c_str();
+		}
+
 		interpreterHandler->incErrorTerminationTest();
 		interpreterHandler->processTestCase(state, msg.str().c_str(), suffix);
 	}
 
 	terminateState(state);
+
+	if (shouldExitOn(termReason))
+		haltExecution = true;
 }
 
 // XXX shoot me
@@ -5932,16 +6232,16 @@ void Executor::callExternalFunction(ExecutionState &state, KInstruction *target,
 		return;
 
 	if (NoExternals && !okExternals.count(function->getName())) {
-		llvm::errs() << "KLEE:ERROR: Calling not-OK external function : "
-				<< function->getName().str() << "\n";
-		terminateStateOnError(state, "externals disallowed", "user.err");
+		klee_warning("Calling not-OK external function : %s\n",
+				function->getName().str().c_str());
+		terminateStateOnError(state, "externals disallowed", User);
 		return;
 	}
 
-// normal external function handling path
-// allocate 128 bits for each argument (+return value) to support fp80's;
-// we could iterate through all the arguments first and determine the exact
-// size we need, but this is faster, and the memory usage isn't significant.
+	// normal external function handling path
+	// allocate 128 bits for each argument (+return value) to support fp80's;
+	// we could iterate through all the arguments first and determine the exact
+	// size we need, but this is faster, and the memory usage isn't significant.
 	uint64_t *args = (uint64_t*) alloca(
 			2 * sizeof(*args) * (arguments.size() + 1));
 	memset(args, 0, 2 * sizeof(*args) * (arguments.size() + 1));
@@ -5994,13 +6294,13 @@ void Executor::callExternalFunction(ExecutionState &state, KInstruction *target,
 			args);
 	if (!success) {
 		terminateStateOnError(state,
-				"failed external call: " + function->getName(), "external.err");
+				"failed external call: " + function->getName(), External);
 		return;
 	}
 
 	if (!state.addressSpace.copyInConcretes()) {
 		terminateStateOnError(state, "external modified read-only object",
-				"external.err");
+				External);
 		return;
 	}
 
@@ -6016,28 +6316,28 @@ void Executor::callExternalFunction(ExecutionState &state, KInstruction *target,
 			for (unsigned i = 0; i < arguments.size(); ++i) {
 				tmpArgs.push_back(arguments.at(i));
 			}
-			interpTree->execute(target->inst, tmpArgs);
+			txTree->execute(target->inst, tmpArgs);
 		}
 	}
 }
 
 /***/
 
-ref<Expr> Executor::replaceReadWithSymbolic(ExecutionState &state,
+ref<Expr> Executor::replaceReadWithSymbolic(ExecutionState & state,
 		ref<Expr> e) {
 	unsigned n = interpreterOpts.MakeConcreteSymbolic;
-	if (!n || replayOut || replayPath)
+	if (!n || replayKTest || replayPath)
 		return e;
 
-// right now, we don't replace symbolics (is there any reason to?)
+	// right now, we don't replace symbolics (is there any reason to?)
 	if (!isa < ConstantExpr > (e))
 		return e;
 
 	if (n != 1 && random() % n)
 		return e;
 
-// create a new fresh location, assert it is equal to concrete value in e
-// and return it.
+	// create a new fresh location, assert it is equal to concrete value in e
+	// and return it.
 
 	static unsigned id;
 	const std::string arrayName("rrws_arr" + llvm::utostr(++id));
@@ -6064,10 +6364,10 @@ ObjectState *Executor::bindObjectInState(ExecutionState &state,
 	ObjectState *os = array ? new ObjectState(mo, array) : new ObjectState(mo);
 	state.addressSpace.bindObject(mo, os);
 
-// Its possible that multiple bindings of the same mo in the state
-// will put multiple copies on this list, but it doesn't really
-// matter because all we use this list for is to unbind the object
-// on function return.
+	// Its possible that multiple bindings of the same mo in the state
+	// will put multiple copies on this list, but it doesn't really
+	// matter because all we use this list for is to unbind the object
+	// on function return.
 	if (isLocal)
 		state.stack.back().allocas.push_back(mo);
 
@@ -6094,7 +6394,7 @@ void Executor::executeAlloc(ExecutionState &state, ref<Expr> size, bool isLocal,
 
 			// Update dependency
 			if (INTERPOLATION_ENABLED)
-				interpTree->execute(target->inst, mo->getBaseExpr());
+				txTree->execute(target->inst, mo->getBaseExpr(), size);
 
 			if (reallocFrom) {
 				unsigned count = std::min(reallocFrom->size, os->size);
@@ -6164,7 +6464,7 @@ void Executor::executeAlloc(ExecutionState &state, ref<Expr> size, bool isLocal,
 
 					// Update dependency
 					if (INTERPOLATION_ENABLED)
-						interpTree->execute(target->inst, result);
+						txTree->execute(target->inst, result);
 				}
 
 				if (hugeSize.second) {
@@ -6175,7 +6475,7 @@ void Executor::executeAlloc(ExecutionState &state, ref<Expr> size, bool isLocal,
 					info << "  concretization : " << example << "\n";
 					info << "  unbound example: " << tmp << "\n";
 					terminateStateOnError(*hugeSize.second,
-							"concretized symbolic size", "model.err",
+							"concretized symbolic size", Model, NULL,
 							info.str());
 				}
 			}
@@ -6202,10 +6502,10 @@ void Executor::executeFree(ExecutionState &state, ref<Expr> address,
 				rl.end(); it != ie; ++it) {
 			const MemoryObject *mo = it->first.first;
 			if (mo->isLocal) {
-				terminateStateOnError(*it->second, "free of alloca", "free.err",
+				terminateStateOnError(*it->second, "free of alloca", Free, NULL,
 						getAddressInfo(*it->second, address));
 			} else if (mo->isGlobal) {
-				terminateStateOnError(*it->second, "free of global", "free.err",
+				terminateStateOnError(*it->second, "free of global", Free, NULL,
 						getAddressInfo(*it->second, address));
 			} else {
 				it->second->addressSpace.unbindObject(mo);
@@ -6218,7 +6518,7 @@ void Executor::executeFree(ExecutionState &state, ref<Expr> address,
 
 void Executor::resolveExact(ExecutionState &state, ref<Expr> p,
 		ExactResolutionList &results, const std::string &name) {
-// XXX we may want to be capping this?
+	// XXX we may want to be capping this?
 	ResolutionList rl;
 	state.addressSpace.resolve(state, solver, p, rl);
 
@@ -6239,7 +6539,7 @@ void Executor::resolveExact(ExecutionState &state, ref<Expr> p,
 
 	if (unbound) {
 		terminateStateOnError(*unbound,
-				"memory error: invalid pointer: " + name, "ptr.err",
+				"memory error: invalid pointer: " + name, Ptr, NULL,
 				getAddressInfo(*unbound, p));
 	}
 }
@@ -6277,7 +6577,7 @@ void Executor::executeMemoryOperation(ExecutionState &state, bool isWrite,
 			value = state.constraints.simplifyExpr(value);
 	}
 
-// fast path: single in-bounds resolution
+	// fast path: single in-bounds resolution
 	ObjectPair op;
 	bool success;
 	solver->setTimeout(coreSolverTimeout);
@@ -6296,11 +6596,11 @@ void Executor::executeMemoryOperation(ExecutionState &state, bool isWrite,
 		}
 
 		ref<Expr> offset = mo->getOffsetExpr(address);
+		ref<Expr> boundsCheck = mo->getBoundsCheckOffset(offset, bytes);
 
 		bool inBounds;
 		solver->setTimeout(coreSolverTimeout);
-		bool success = solver->mustBeTrue(state,
-				mo->getBoundsCheckOffset(offset, bytes), inBounds);
+		bool success = solver->mustBeTrue(state, boundsCheck, inBounds);
 		solver->setTimeout(0);
 		if (!success) {
 			state.pc = state.prevPC;
@@ -6313,7 +6613,7 @@ void Executor::executeMemoryOperation(ExecutionState &state, bool isWrite,
 			if (isWrite) {
 				if (os->readOnly) {
 					terminateStateOnError(state,
-							"memory error: object read only", "readonly.err");
+							"memory error: object read only", ReadOnly);
 				} else {
 					ObjectState *wos = state.addressSpace.getWriteable(mo, os);
 					wos->write(offset, value);
@@ -6330,7 +6630,8 @@ void Executor::executeMemoryOperation(ExecutionState &state, bool isWrite,
 
 					// Update dependency
 					if (INTERPOLATION_ENABLED && target)
-						interpTree->execute(target->inst, value, address);
+						txTree->executeMemoryOperation(target->inst, value,
+								address, boundsCheck->isTrue());
 				}
 			} else {
 				TaintSet taint = taintr | taintw;
@@ -6354,15 +6655,16 @@ void Executor::executeMemoryOperation(ExecutionState &state, bool isWrite,
 
 				// Update dependency
 				if (INTERPOLATION_ENABLED && target)
-					interpTree->execute(target->inst, result, address);
+					txTree->executeMemoryOperation(target->inst, result,
+							address, boundsCheck->isTrue());
 			}
 
 			return;
 		}
 	}
 
-// we are on an error path (no resolution, multiple resolution, one
-// resolution with out of bounds)
+	// we are on an error path (no resolution, multiple resolution, one
+	// resolution with out of bounds)
 
 	ResolutionList rl;
 	solver->setTimeout(coreSolverTimeout);
@@ -6370,7 +6672,7 @@ void Executor::executeMemoryOperation(ExecutionState &state, bool isWrite,
 			coreSolverTimeout);
 	solver->setTimeout(0);
 
-// XXX there is some query wasteage here. who cares?
+	// XXX there is some query wasteage here. who cares?
 	ExecutionState *unbound = &state;
 
 	for (ResolutionList::iterator i = rl.begin(), ie = rl.end(); i != ie; ++i) {
@@ -6386,7 +6688,7 @@ void Executor::executeMemoryOperation(ExecutionState &state, bool isWrite,
 			if (isWrite) {
 				if (os->readOnly) {
 					terminateStateOnError(*bound,
-							"memory error: object read only", "readonly.err");
+							"memory error: object read only", ReadOnly);
 				} else {
 					ObjectState *wos = bound->addressSpace.getWriteable(mo, os);
 					ref<Expr> offset = mo->getOffsetExpr(address);
@@ -6400,6 +6702,10 @@ void Executor::executeMemoryOperation(ExecutionState &state, bool isWrite,
 							wos->writeByteTaint(offset_cnt + j,
 									taintw | taintr);
 					}
+					// Update dependency
+					if (INTERPOLATION_ENABLED && target)
+						TxTree::executeMemoryOperationOnNode(bound->txTreeNode,
+								target->inst, value, address, false);
 				}
 			} else {
 				TaintSet taint = taintr | taintw;
@@ -6415,6 +6721,10 @@ void Executor::executeMemoryOperation(ExecutionState &state, bool isWrite,
 						taint |= os->readByteTaint(offset_cnt + j);
 				}
 				bindLocal(target, *bound, result, taint);
+				// Update dependency
+				if (INTERPOLATION_ENABLED && target)
+					TxTree::executeMemoryOperationOnNode(bound->txTreeNode,
+							target->inst, result, address, false);
 			}
 		}
 
@@ -6423,22 +6733,28 @@ void Executor::executeMemoryOperation(ExecutionState &state, bool isWrite,
 			break;
 	}
 
-// XXX should we distinguish out of bounds and overlapped cases?
+	// XXX should we distinguish out of bounds and overlapped cases?
 	if (unbound) {
+		if (INTERPOLATION_ENABLED)
+			TxTree::symbolicExecutionError = true; // We let interpolation subsystem knows we are recovering from
+												   // error, hence the previous expression may not be recorded
+
 		if (incomplete) {
 			terminateStateEarly(*unbound, "Query timed out (resolve).");
 		} else {
 			terminateStateOnError(*unbound,
-					"memory error: out of bound pointer", "ptr.err",
+					"memory error: out of bound pointer", Ptr, NULL,
 					getAddressInfo(*unbound, address));
+
+			TxTreeGraph::setMemoryError(state);
 		}
 	}
 }
 
 void Executor::executeMakeSymbolic(ExecutionState &state,
 		const MemoryObject *mo, const std::string &name) {
-// Create a new object state for the memory object (instead of a copy).
-	if (!replayOut) {
+	// Create a new object state for the memory object (instead of a copy).
+	if (!replayKTest) {
 		// Find a unique name for this array.  First try the original name,
 		// or if that fails try adding a unique identifier.
 		unsigned id = 0;
@@ -6453,6 +6769,8 @@ void Executor::executeMakeSymbolic(ExecutionState &state,
 			const Array *shadow = arrayCache.CreateArray(
 					ShadowArray::getShadowName(uniqueName), mo->size);
 			ShadowArray::addShadowArrayMap(array, shadow);
+			txTree->executeMakeSymbolic(state.prevPC->inst, mo->getBaseExpr(),
+					array);
 		}
 
 		bindObjectInState(state, mo, false, array);
@@ -6461,7 +6779,7 @@ void Executor::executeMakeSymbolic(ExecutionState &state,
 		std::map<ExecutionState*, std::vector<SeedInfo> >::iterator it =
 				seedMap.find(&state);
 		if (it != seedMap.end()) { // In seed mode we need to add this as a
-				// binding.
+								   // binding.
 			for (std::vector<SeedInfo>::iterator siit = it->second.begin(),
 					siie = it->second.end(); siit != siie; ++siit) {
 				SeedInfo &si = *siit;
@@ -6474,7 +6792,7 @@ void Executor::executeMakeSymbolic(ExecutionState &state,
 						values = std::vector<unsigned char>(mo->size, '\0');
 					} else if (!AllowSeedExtension) {
 						terminateStateOnError(state,
-								"ran out of inputs during seeding", "user.err");
+								"ran out of inputs during seeding", User);
 						break;
 					}
 				} else {
@@ -6488,7 +6806,7 @@ void Executor::executeMakeSymbolic(ExecutionState &state,
 								<< mo->size << "]" << " vs " << obj->name << "["
 								<< obj->numBytes << "]" << " in test\n";
 
-						terminateStateOnError(state, msg.str(), "user.err");
+						terminateStateOnError(state, msg.str(), User);
 						break;
 					} else {
 						std::vector<unsigned char> &values =
@@ -6505,13 +6823,12 @@ void Executor::executeMakeSymbolic(ExecutionState &state,
 		}
 	} else {
 		ObjectState *os = bindObjectInState(state, mo, false);
-		if (replayPosition >= replayOut->numObjects) {
-			terminateStateOnError(state, "replay count mismatch", "user.err");
+		if (replayPosition >= replayKTest->numObjects) {
+			terminateStateOnError(state, "replay count mismatch", User);
 		} else {
-			KTestObject *obj = &replayOut->objects[replayPosition++];
+			KTestObject *obj = &replayKTest->objects[replayPosition++];
 			if (obj->numBytes != mo->size) {
-				terminateStateOnError(state, "replay size mismatch",
-						"user.err");
+				terminateStateOnError(state, "replay size mismatch", User);
 			} else {
 				for (unsigned i = 0; i < mo->size; i++)
 					os->write8(i, obj->bytes[i]);
@@ -6527,16 +6844,16 @@ void Executor::runFunctionAsMain(Function *f, int argc, char **argv,
 
 	std::vector<ref<Expr> > arguments;
 
-// force deterministic initialization of memory objects
+	// force deterministic initialization of memory objects
 	srand(1);
 	srandom(1);
 
 	MemoryObject *argvMO = 0;
 
-// In order to make uclibc happy and be closer to what the system is
-// doing we lay out the environments at the end of the argv array
-// (both are terminated by a null). There is also a final terminating
-// null that uclibc seems to expect, possibly the ELF header?
+	// In order to make uclibc happy and be closer to what the system is
+	// doing we lay out the environments at the end of the argv array
+	// (both are terminated by a null). There is also a final terminating
+	// null that uclibc seems to expect, possibly the ELF header?
 
 	int envc;
 	for (envc = 0; envp[envc]; ++envc)
@@ -6552,6 +6869,9 @@ void Executor::runFunctionAsMain(Function *f, int argc, char **argv,
 		if (++ai != ae) {
 			argvMO = memory->allocate((argc + 1 + envc + 1 + 1) * NumPtrBytes,
 					false, true, f->begin()->begin());
+
+			if (!argvMO)
+				klee_error("Could not allocate memory for function arguments");
 
 			arguments.push_back(argvMO->getBaseExpr());
 
@@ -6593,6 +6913,9 @@ void Executor::runFunctionAsMain(Function *f, int argc, char **argv,
 
 				MemoryObject *arg = memory->allocate(len + 1, false, true,
 						state->pc->inst);
+				if (!arg)
+					klee_error(
+							"Could not allocate memory for function arguments");
 				ObjectState *os = bindObjectInState(*state, arg, false);
 				for (j = 0; j < len + 1; j++)
 					os->write8(j, s[j]);
@@ -6609,9 +6932,9 @@ void Executor::runFunctionAsMain(Function *f, int argc, char **argv,
 	state->ptreeNode = processTree->root;
 
 	if (INTERPOLATION_ENABLED) {
-		interpTree = new ITree(state);  //added by Felicia
-		state->itreeNode = interpTree->root;
-		SearchTree::initialize(interpTree->root);
+		txTree = new TxTree(state, kmodule->targetData); // Added by Felicia
+		state->txTreeNode = txTree->root;
+		TxTreeGraph::initialize(txTree->root);
 	}
 
 	run(*state);
@@ -6619,20 +6942,20 @@ void Executor::runFunctionAsMain(Function *f, int argc, char **argv,
 	processTree = 0;
 
 	if (INTERPOLATION_ENABLED) {
-		SearchTree::save(interpreterHandler->getOutputFilename("tree.dot"));
-		SearchTree::deallocate();
+		TxTreeGraph::save(interpreterHandler->getOutputFilename("tree.dot"));
+		TxTreeGraph::deallocate();
 
-#ifdef SUPPORT_Z3
+		delete txTree;
+		txTree = 0;
+
+#ifdef ENABLE_Z3
 		// Print interpolation time statistics
 		if (InterpolationStat)
-			interpTree->dumpInterpolationStat();
+		interpreterHandler->assignSubsumptionStats(TxTree::getInterpolationStat());
 #endif
-
-		delete interpTree;
-		interpTree = 0;
 	}
 
-// hack to clear memory objects
+	// hack to clear memory objects
 	delete memory;
 	memory = new MemoryManager(NULL);
 
@@ -6699,13 +7022,13 @@ bool Executor::getSymbolicSolution(const ExecutionState &state,
 
 	ExecutionState tmp(state);
 
-// Go through each byte in every test case and attempt to restrict
-// it to the constraints contained in cexPreferences.  (Note:
-// usually this means trying to make it an ASCII character (0-127)
-// and therefore human readable. It is also possible to customize
-// the preferred constraints.  See test/Features/PreferCex.c for
-// an example) While this process can be very expensive, it can
-// also make understanding individual test cases much easier.
+	// Go through each byte in every test case and attempt to restrict
+	// it to the constraints contained in cexPreferences.  (Note:
+	// usually this means trying to make it an ASCII character (0-127)
+	// and therefore human readable. It is also possible to customize
+	// the preferred constraints.  See test/Features/PreferCex.c for
+	// an example) While this process can be very expensive, it can
+	// also make understanding individual test cases much easier.
 	for (unsigned i = 0; i != state.symbolics.size(); ++i) {
 		const MemoryObject *mo = state.symbolics[i].first;
 		std::vector<ref<Expr> >::const_iterator pi = mo->cexPreferences.begin(),
@@ -6772,7 +7095,7 @@ void Executor::doImpliedValueConcretization(ExecutionState &state, ref<Expr> e,
 		if (ConstantExpr *CE = dyn_cast < ConstantExpr > (re->index)) {
 			// FIXME: This is the sole remaining usage of the Array object
 			// variable. Kill me.
-			const MemoryObject *mo = 0; //re->updates.root->object;
+			const MemoryObject *mo = 0;				//re->updates.root->object;
 			const ObjectState *os = state.addressSpace.findObject(mo);
 
 			if (!os) {
@@ -6790,7 +7113,7 @@ void Executor::doImpliedValueConcretization(ExecutionState &state, ref<Expr> e,
 	}
 }
 
-Expr::Width Executor::getWidthForLLVMType(LLVM_TYPE_Q llvm::Type *type) const {
+Expr::Width Executor::getWidthForLLVMType(LLVM_TYPE_Q llvm::Type * type) const {
 	return kmodule->targetData->getTypeSizeInBits(type);
 }
 

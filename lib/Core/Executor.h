@@ -21,6 +21,7 @@
 #include "klee/Internal/Module/KInstruction.h"
 #include "klee/Internal/Module/KModule.h"
 #include "klee/util/ArrayCache.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include "llvm/ADT/Twine.h"
 
@@ -67,8 +68,8 @@ class MemoryManager;
 class MemoryObject;
 class ObjectState;
 class PTree;
-class ITree;
-class ITreeNode;
+class TxTree;
+class TxTreeNode;
 class Searcher;
 class SeedInfo;
 class SpecialFunctionHandler;
@@ -102,7 +103,6 @@ public:
 	};
 
 	typedef std::pair<ExecutionState*, ExecutionState*> StatePair;
-
 	/*HSET*/
 	class RawAbstractState {
 	public:
@@ -144,13 +144,14 @@ public:
 				stillEqual = true;
 				for (std::vector<unsigned>::size_type i = 0;
 						i < funcDestStack.size(); i++) {
-					if(funcDestStack[i] != b.funcDestStack[i]) stillEqual = false;
-					if(funcDestStack[i] < b.funcDestStack[i]){
+					if (funcDestStack[i] != b.funcDestStack[i])
+						stillEqual = false;
+					if (funcDestStack[i] < b.funcDestStack[i]) {
 						result = true;
 						break;
 					}
 				}
-				if(!result && stillEqual && pcDest.size() < b.pcDest.size())
+				if (!result && stillEqual && pcDest.size() < b.pcDest.size())
 					result = true;
 			}
 			return result;
@@ -162,21 +163,26 @@ public:
 		}
 
 		void popFuncDest() {
-			if(funcDestStack.size() > 0) funcDestStack.pop_back();
+			if (funcDestStack.size() > 0)
+				funcDestStack.pop_back();
 		}
 
-		std::string ExtractFullDest(ExecutionState &state){
+		std::string ExtractFullDest(ExecutionState &state) {
 			std::stringstream ss;
 			std::stringstream result;
-			for(std::vector<unsigned>::const_iterator it=state.funcDestStack.begin(); it !=state.funcDestStack.end(); ++it){
+			for (std::vector<unsigned>::const_iterator it =
+					state.funcDestStack.begin();
+					it != state.funcDestStack.end(); ++it) {
 				ss << *it;
 			}
 			ss << state.pc->dest;
 			result << state.pc->dest;
 
 			std::string curIns = ss.str();
-			for(std::vector<std::string>::const_iterator it=state.logIns.begin(); it !=state.logIns.end(); ++it){
-				if(curIns == *it) result << state.pc->dest;
+			for (std::vector<std::string>::const_iterator it =
+					state.logIns.begin(); it != state.logIns.end(); ++it) {
+				if (curIns == *it)
+					result << state.pc->dest;
 			}
 			return result.str();
 		}
@@ -267,6 +273,7 @@ public:
 			TempTerminateMark = false;
 		}
 	};
+
 	enum HSETAbstractMethods {
 		NONE
 	};
@@ -274,10 +281,25 @@ public:
 	HSETGeneralInfo HSETInfo;
 	Executor::HSETAbstractMethods AbstractMethods;
 
+	enum TerminateReason {
+		Abort,
+		Assert,
+		Exec,
+		External,
+		Free,
+		Model,
+		Overflow,
+		Ptr,
+		ReadOnly,
+		ReportError,
+		User,
+		Unhandled
+	};
+
 private:
+	static const char *TerminateReasonNames[];
+
 	class TimerInfo;
-	int TaintInitializer;
-	int GlobalWCET;
 	KModule *kmodule;
 	InterpreterHandler *interpreterHandler;
 	Searcher *searcher;
@@ -291,19 +313,21 @@ private:
 	SpecialFunctionHandler *specialFunctionHandler;
 	std::vector<TimerInfo*> timers;
 	PTree *processTree;
-	ITree *interpTree;
+	TxTree *txTree;
 	ref<Expr> latestBaseLeft;
 	ref<Expr> latestBaseRight;
 	/// Used to track states that have been added during the current
 	/// instructions step.
 	/// \invariant \ref addedStates is a subset of \ref states.
 	/// \invariant \ref addedStates and \ref removedStates are disjoint.
-	std::set<ExecutionState*> addedStates;
+	std::vector<ExecutionState *> addedStates;
 	/// Used to track states that have been removed during the current
 	/// instructions step.
 	/// \invariant \ref removedStates is a subset of \ref states.
 	/// \invariant \ref addedStates and \ref removedStates are disjoint.
-	std::set<ExecutionState*> removedStates;
+	std::vector<ExecutionState *> removedStates;
+	int TaintInitializer;
+	int GlobalWCET;
 
 	/// When non-empty the Executor is running in "seed" mode. The
 	/// states in this map will be executed in an arbitrary order
@@ -327,10 +351,10 @@ private:
 
 	/// When non-null the bindings that will be used for calls to
 	/// klee_make_symbolic in order replay.
-	const struct KTest *replayOut;
+	const struct KTest *replayKTest;
 	/// When non-null a list of branch decisions to be used for replay.
 	const std::vector<bool> *replayPath;
-	/// The index into the current \ref replayOut or \ref replayPath
+	/// The index into the current \ref replayKTest or \ref replayPath
 	/// object.
 	unsigned replayPosition;
 
@@ -360,16 +384,26 @@ private:
 	/// Assumes ownership of the created array objects
 	ArrayCache arrayCache;
 
+	/// File to print executed instructions to
+	llvm::raw_ostream *debugInstFile;
+
+	// @brief Buffer used by logBuffer
+	std::string debugBufferString;
+
+	// @brief buffer to store logs before flushing to file
+	llvm::raw_string_ostream debugLogBuffer;
+
 	llvm::Function* getTargetFunction(llvm::Value *calledVal,
 			ExecutionState &state);
 
 	void executeInstruction(ExecutionState &state, KInstruction *ki);
 
-	void printFileLine(ExecutionState &state, KInstruction *ki);
+	void printFileLine(ExecutionState &state, KInstruction *ki,
+			llvm::raw_ostream &file);
 
 	void run(ExecutionState &initialState);
 
-	// Given a concrete object in our [klee's] address space, add it to
+	// Given a concrete object in our [klee's] address space, add it to 
 	// objects checked code can reference.
 	MemoryObject *addExternalObject(ExecutionState &state, void *addr,
 			unsigned size, bool isReadOnly);
@@ -516,6 +550,8 @@ private:
 	const InstructionInfo & getLastNonKleeInternalInstruction(
 			const ExecutionState &state, llvm::Instruction** lastInstruction);
 
+	bool shouldExitOn(enum TerminateReason termReason);
+
 	// remove state from queue and delete
 	void terminateState(ExecutionState &state);
 	// call subsumption handler and terminate state
@@ -526,15 +562,15 @@ private:
 	void terminateStateOnExit(ExecutionState &state);
 	// call error handler and terminate state
 	void terminateStateOnError(ExecutionState &state,
-			const llvm::Twine &message, const char *suffix,
-			const llvm::Twine &longMessage = "");
+			const llvm::Twine &message, enum TerminateReason termReason,
+			const char *suffix = NULL, const llvm::Twine &longMessage = "");
 
 	// call error handler and terminate state, for execution errors
 	// (things that should not be possible, like illegal instruction or
 	// unlowered instrinsic, or are unsupported, like inline assembly)
 	void terminateStateOnExecError(ExecutionState &state,
 			const llvm::Twine &message, const llvm::Twine &info = "") {
-		terminateStateOnError(state, message, "exec.err", info);
+		terminateStateOnError(state, message, Exec, NULL, info);
 	}
 
 	/// bindModuleConstants - Initialize the module constant table.
@@ -562,6 +598,8 @@ private:
 	void initTimers();
 	void processTimers(ExecutionState *current, double maxInstTime);
 	void checkMemoryUsage();
+	void printDebugInstructions(ExecutionState &state);
+	void doDumpStates();
 
 	//Taint
 	// Estimate total execution time of state
@@ -586,14 +624,14 @@ public:
 		symPathWriter = tsw;
 	}
 
-	virtual void setReplayOut(const struct KTest *out) {
+	virtual void setReplayKTest(const struct KTest *out) {
 		assert(!replayPath && "cannot replay both buffer and path");
-		replayOut = out;
+		replayKTest = out;
 		replayPosition = 0;
 	}
 
 	virtual void setReplayPath(const std::vector<bool> *path) {
-		assert(!replayOut && "cannot replay both buffer and path");
+		assert(!replayKTest && "cannot replay both buffer and path");
 		replayPath = path;
 		replayPosition = 0;
 	}

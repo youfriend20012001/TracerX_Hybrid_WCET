@@ -88,6 +88,7 @@
  /usr/lib/llvm-3.4/build/include/llvm/IR/GlobalVariable.h \
  /usr/lib/llvm-3.4/build/include/llvm/IR/Metadata.h \
  /usr/lib/llvm-3.4/build/include/llvm/IR/LLVMContext.h \
+ /usr/lib/llvm-3.4/build/include/llvm/Support/Errno.h \
  /usr/lib/llvm-3.4/build/include/llvm/Bitcode/ReaderWriter.h \
  /usr/lib/llvm-3.4/build/include/llvm/Support/ManagedStatic.h \
  /usr/lib/llvm-3.4/build/include/llvm/Support/Atomic.h \
@@ -275,6 +276,8 @@
 /usr/lib/llvm-3.4/build/include/llvm/IR/Metadata.h:
 
 /usr/lib/llvm-3.4/build/include/llvm/IR/LLVMContext.h:
+
+/usr/lib/llvm-3.4/build/include/llvm/Support/Errno.h:
 
 /usr/lib/llvm-3.4/build/include/llvm/Bitcode/ReaderWriter.h:
 

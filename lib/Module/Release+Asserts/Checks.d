@@ -51,6 +51,10 @@
  /usr/lib/llvm-3.4/build/include/llvm/IR/GlobalAlias.h \
  /usr/lib/llvm-3.4/build/include/llvm/IR/GlobalVariable.h \
  /usr/lib/llvm-3.4/build/include/llvm/IR/Metadata.h \
+ /usr/lib/llvm-3.4/build/include/llvm/ADT/Triple.h \
+ /usr/lib/llvm-3.4/build/include/llvm/CodeGen/IntrinsicLowering.h \
+ /usr/lib/llvm-3.4/build/include/llvm/IR/Intrinsics.h \
+ /usr/lib/llvm-3.4/build/include/llvm/IR/Intrinsics.gen \
  /usr/lib/llvm-3.4/build/include/llvm/Pass.h \
  /usr/lib/llvm-3.4/build/include/llvm/PassSupport.h \
  /usr/lib/llvm-3.4/build/include/llvm/Pass.h \
@@ -59,9 +63,6 @@
  /usr/lib/llvm-3.4/build/include/llvm/Support/Atomic.h \
  /usr/lib/llvm-3.4/build/include/llvm/Support/Valgrind.h \
  /usr/lib/llvm-3.4/build/include/llvm/PassAnalysisSupport.h \
- /usr/lib/llvm-3.4/build/include/llvm/CodeGen/IntrinsicLowering.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/Intrinsics.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/Intrinsics.gen \
  /usr/lib/llvm-3.4/build/include/llvm/IR/IntrinsicInst.h \
  /usr/lib/llvm-3.4/build/include/llvm/IR/LLVMContext.h \
  /usr/lib/llvm-3.4/build/include/llvm/IR/DataLayout.h \
@@ -174,6 +175,14 @@ Passes.h:
 
 /usr/lib/llvm-3.4/build/include/llvm/IR/Metadata.h:
 
+/usr/lib/llvm-3.4/build/include/llvm/ADT/Triple.h:
+
+/usr/lib/llvm-3.4/build/include/llvm/CodeGen/IntrinsicLowering.h:
+
+/usr/lib/llvm-3.4/build/include/llvm/IR/Intrinsics.h:
+
+/usr/lib/llvm-3.4/build/include/llvm/IR/Intrinsics.gen:
+
 /usr/lib/llvm-3.4/build/include/llvm/Pass.h:
 
 /usr/lib/llvm-3.4/build/include/llvm/PassSupport.h:
@@ -189,12 +198,6 @@ Passes.h:
 /usr/lib/llvm-3.4/build/include/llvm/Support/Valgrind.h:
 
 /usr/lib/llvm-3.4/build/include/llvm/PassAnalysisSupport.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/CodeGen/IntrinsicLowering.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/Intrinsics.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/Intrinsics.gen:
 
 /usr/lib/llvm-3.4/build/include/llvm/IR/IntrinsicInst.h:
 

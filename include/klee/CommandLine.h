@@ -9,9 +9,9 @@
 #include "llvm/Support/CommandLine.h"
 #include "klee/Config/config.h"
 
-#ifdef SUPPORT_Z3
-#ifdef SUPPORT_STP
-#define INTERPOLATION_ENABLED (SelectSolver == SOLVER_Z3 && !NoInterpolation)
+#ifdef ENABLE_Z3
+#ifdef ENABLE_STP
+#define INTERPOLATION_ENABLED (CoreSolverToUse == Z3_SOLVER && !NoInterpolation)
 #else
 #define INTERPOLATION_ENABLED (!NoInterpolation)
 #endif
@@ -56,29 +56,46 @@ enum QueryLoggingSolverType
  */
 extern llvm::cl::list<QueryLoggingSolverType> queryLoggingOptions;
 
-#if defined(SUPPORT_STP) && defined(SUPPORT_Z3)
-enum SolverType
-{
-	SOLVER_Z3,
-	SOLVER_STP
+enum CoreSolverType {
+  STP_SOLVER,
+  METASMT_SOLVER,
+  DUMMY_SOLVER,
+  Z3_SOLVER,
+  NO_SOLVER
 };
+extern llvm::cl::opt<CoreSolverType> CoreSolverToUse;
 
-extern llvm::cl::opt<SolverType> SelectSolver;
-#endif
+extern llvm::cl::opt<CoreSolverType> DebugCrossCheckCoreSolverWith;
 
-// We should compile in this option even when SUPPORT_Z3
+// We should compile in this option even when ENABLE_Z3
 // was undefined to avoid regression test failure.
 extern llvm::cl::opt<bool> NoInterpolation;
 
-#ifdef SUPPORT_Z3
+#ifdef ENABLE_Z3
+
 extern llvm::cl::opt<bool> OutputTree;
 
 extern llvm::cl::opt<bool> InterpolationStat;
 
+extern llvm::cl::opt<bool> NoSubsumedTest;
+
 extern llvm::cl::opt<bool> NoExistential;
+
+extern llvm::cl::opt<int> MaxFailSubsumption;
+
+extern llvm::cl::opt<int> DebugState;
+
+extern llvm::cl::opt<int> DebugSubsumption;
+
+extern llvm::cl::opt<bool> NoBoundInterpolation;
+
+extern llvm::cl::opt<bool> ExactAddressInterpolant;
+
+extern llvm::cl::opt<bool> SpecialFunctionBoundInterpolation;
+
 #endif
 
-#ifdef SUPPORT_METASMT
+#ifdef ENABLE_METASMT
 
 enum MetaSMTBackendType
 {
@@ -88,9 +105,9 @@ enum MetaSMTBackendType
     METASMT_BACKEND_BOOLECTOR
 };
 
-extern llvm::cl::opt<klee::MetaSMTBackendType> UseMetaSMT;
+extern llvm::cl::opt<klee::MetaSMTBackendType> MetaSMTBackend;
 
-#endif /* SUPPORT_METASMT */
+#endif /* ENABLE_METASMT */
 
 //A bit of ugliness so we can use cl::list<> like cl::bits<>, see queryLoggingOptions
 template <typename T>

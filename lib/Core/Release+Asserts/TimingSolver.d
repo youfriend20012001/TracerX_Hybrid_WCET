@@ -34,6 +34,10 @@
  /usr/lib/llvm-3.4/build/include/llvm/Support/TimeValue.h \
  /usr/lib/llvm-3.4/build/include/llvm/Support/system_error.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Solver.h \
+ /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/CommandLine.h \
+ /usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h \
+ /usr/lib/llvm-3.4/build/include/llvm/ADT/StringMap.h \
+ /usr/lib/llvm-3.4/build/include/llvm/Support/Allocator.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/ExecutionState.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Constraints.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/ADT/TreeStream.h \
@@ -135,6 +139,14 @@ TimingSolver.h:
 /usr/lib/llvm-3.4/build/include/llvm/Support/system_error.h:
 
 /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Solver.h:
+
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/CommandLine.h:
+
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:
+
+/usr/lib/llvm-3.4/build/include/llvm/ADT/StringMap.h:
+
+/usr/lib/llvm-3.4/build/include/llvm/Support/Allocator.h:
 
 /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/ExecutionState.h:
 

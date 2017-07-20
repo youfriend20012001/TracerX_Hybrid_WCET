@@ -135,7 +135,7 @@ KModule::~KModule() {
 /***/
 
 namespace llvm {
-extern void Optimize(Module*);
+extern void Optimize(Module *, const std::string &EntryPoint);
 }
 
 // what a hack
@@ -328,7 +328,7 @@ void KModule::prepare(const Interpreter::ModuleOptions &opts,
   pm.run(*module);
 
   if (opts.Optimize)
-    Optimize(module);
+    Optimize(module, opts.EntryPoint);
 
   //Computing region info
   if (opts.CalculateRegions){

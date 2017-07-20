@@ -39,7 +39,7 @@ unsigned Expr::count = 0;
 Expr::TaintGranularLevel Expr::tLevel = Expr::NormalTaint;
 
 int Expr::extractTaintLevel(int i){
-
+	return 0;
 }
 
 
@@ -505,6 +505,23 @@ ref<Expr>  NotOptimizedExpr::create(ref<Expr> src) {
 
 /***/
 
+Array::Array(const std::string &_name, uint64_t _size,
+             const ref<ConstantExpr> *constantValuesBegin,
+             const ref<ConstantExpr> *constantValuesEnd, Expr::Width _domain,
+             Expr::Width _range)
+    : name(_name), size(_size), domain(_domain), range(_range),
+      constantValues(constantValuesBegin, constantValuesEnd) {
+
+  assert((isSymbolicArray() || constantValues.size() == size) &&
+         "Invalid size for constant array!");
+  computeHash();
+#ifndef NDEBUG
+  for (const ref<ConstantExpr> *it = constantValuesBegin;
+       it != constantValuesEnd; ++it)
+    assert((*it)->getWidth() == getRange() &&
+           "Invalid initial constant value!");
+#endif // NDEBUG
+}
 extern "C" void vc_DeleteExpr(void*);
 
 Array::~Array() {
@@ -689,11 +706,11 @@ ref<Expr> SExtExpr::create(const ref<Expr> &e, Width w) {
   if (w == kBits) {
     return e;
   } else if (w < kBits) { // trunc
-	return ExtractExpr::create(e, 0, w);
+    return ExtractExpr::create(e, 0, w);
   } else if (ConstantExpr *CE = dyn_cast<ConstantExpr>(e)) {
-	return CE->SExt(w);
+    return CE->SExt(w);
   } else {    
-	return SExtExpr::alloc(e, w);
+    return SExtExpr::alloc(e, w);
   }
 }
 

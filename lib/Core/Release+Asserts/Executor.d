@@ -73,29 +73,22 @@
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/SolverStats.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Statistic.h \
  Context.h CoreStats.h ExternalDispatcher.h ImpliedValue.h Memory.h \
- ITree.h \
- /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/CommandLine.h \
- /usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h \
- /usr/lib/llvm-3.4/build/include/llvm/ADT/StringMap.h \
- /usr/lib/llvm-3.4/build/include/llvm/Support/Allocator.h \
- /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/util/ExprVisitor.h \
- /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/util/ExprHashMap.h \
- Dependency.h AddressSpace.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/Function.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/Argument.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/BasicBlock.h \
- /usr/lib/llvm-3.4/build/include/llvm/ADT/ilist.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/SymbolTableListTraits.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/GlobalValue.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/Constant.h \
  /usr/lib/llvm-3.4/build/include/llvm/ADT/StringExtras.h MemoryManager.h \
  PTree.h Searcher.h SeedInfo.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/util/Assignment.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/util/ExprEvaluator.h \
- SpecialFunctionHandler.h StatsTracker.h CallPathManager.h TimingSolver.h \
+ /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/util/ExprVisitor.h \
+ /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/util/ExprHashMap.h \
+ ShadowArray.h AddressSpace.h SpecialFunctionHandler.h StatsTracker.h \
+ CallPathManager.h TimingSolver.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Solver.h \
- UserSearcher.h ExecutorTimerInfo.h \
+ /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/CommandLine.h \
+ /usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h \
+ /usr/lib/llvm-3.4/build/include/llvm/ADT/StringMap.h \
+ /usr/lib/llvm-3.4/build/include/llvm/Support/Allocator.h UserSearcher.h \
+ ExecutorTimerInfo.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/System/Time.h \
+ TxPrintUtil.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Common.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/util/ExprPPrinter.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/util/ExprSMTLIBPrinter.h \
@@ -103,6 +96,7 @@
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/util/ExprUtil.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/util/GetElementPtrTypeIterator.h \
  /usr/lib/llvm-3.4/build/include/llvm/IR/Constants.h \
+ /usr/lib/llvm-3.4/build/include/llvm/IR/Constant.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/ADT/KTest.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/ADT/RNG.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/Module/InstructionInfoTable.h \
@@ -110,6 +104,14 @@
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/Support/FloatEvaluation.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/Support/IntEvaluation.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/System/MemoryUsage.h \
+ TxTree.h Dependency.h \
+ /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/Module/TxValues.h \
+ /usr/lib/llvm-3.4/build/include/llvm/IR/BasicBlock.h \
+ /usr/lib/llvm-3.4/build/include/llvm/ADT/ilist.h \
+ /usr/lib/llvm-3.4/build/include/llvm/IR/SymbolTableListTraits.h \
+ /usr/lib/llvm-3.4/build/include/llvm/IR/Function.h \
+ /usr/lib/llvm-3.4/build/include/llvm/IR/Argument.h \
+ /usr/lib/llvm-3.4/build/include/llvm/IR/GlobalValue.h \
  /usr/lib/llvm-3.4/build/include/llvm/IR/IntrinsicInst.h \
  /usr/lib/llvm-3.4/build/include/llvm/IR/Intrinsics.h \
  /usr/lib/llvm-3.4/build/include/llvm/IR/Intrinsics.gen \
@@ -134,7 +136,8 @@
  /usr/lib/llvm-3.4/build/include/llvm/Analysis/MemoryDependenceAnalysis.h \
  /usr/lib/llvm-3.4/build/include/llvm/Analysis/AliasAnalysis.h \
  /usr/lib/llvm-3.4/build/include/llvm/Support/CallSite.h \
- /usr/lib/llvm-3.4/build/include/llvm/Support/ValueHandle.h
+ /usr/lib/llvm-3.4/build/include/llvm/Support/ValueHandle.h \
+ /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/Support/CompressionStream.h
 
 Executor.h:
 
@@ -290,38 +293,6 @@ ImpliedValue.h:
 
 Memory.h:
 
-ITree.h:
-
-/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/CommandLine.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/ADT/StringMap.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/Support/Allocator.h:
-
-/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/util/ExprVisitor.h:
-
-/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/util/ExprHashMap.h:
-
-Dependency.h:
-
-AddressSpace.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/Function.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/Argument.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/BasicBlock.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/ADT/ilist.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/SymbolTableListTraits.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/GlobalValue.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/Constant.h:
-
 /usr/lib/llvm-3.4/build/include/llvm/ADT/StringExtras.h:
 
 MemoryManager.h:
@@ -336,6 +307,14 @@ SeedInfo.h:
 
 /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/util/ExprEvaluator.h:
 
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/util/ExprVisitor.h:
+
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/util/ExprHashMap.h:
+
+ShadowArray.h:
+
+AddressSpace.h:
+
 SpecialFunctionHandler.h:
 
 StatsTracker.h:
@@ -346,11 +325,21 @@ TimingSolver.h:
 
 /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Solver.h:
 
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/CommandLine.h:
+
+/usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h:
+
+/usr/lib/llvm-3.4/build/include/llvm/ADT/StringMap.h:
+
+/usr/lib/llvm-3.4/build/include/llvm/Support/Allocator.h:
+
 UserSearcher.h:
 
 ExecutorTimerInfo.h:
 
 /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/System/Time.h:
+
+TxPrintUtil.h:
 
 /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Common.h:
 
@@ -366,6 +355,8 @@ ExecutorTimerInfo.h:
 
 /usr/lib/llvm-3.4/build/include/llvm/IR/Constants.h:
 
+/usr/lib/llvm-3.4/build/include/llvm/IR/Constant.h:
+
 /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/ADT/KTest.h:
 
 /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/ADT/RNG.h:
@@ -379,6 +370,24 @@ ExecutorTimerInfo.h:
 /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/Support/IntEvaluation.h:
 
 /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/System/MemoryUsage.h:
+
+TxTree.h:
+
+Dependency.h:
+
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/Module/TxValues.h:
+
+/usr/lib/llvm-3.4/build/include/llvm/IR/BasicBlock.h:
+
+/usr/lib/llvm-3.4/build/include/llvm/ADT/ilist.h:
+
+/usr/lib/llvm-3.4/build/include/llvm/IR/SymbolTableListTraits.h:
+
+/usr/lib/llvm-3.4/build/include/llvm/IR/Function.h:
+
+/usr/lib/llvm-3.4/build/include/llvm/IR/Argument.h:
+
+/usr/lib/llvm-3.4/build/include/llvm/IR/GlobalValue.h:
 
 /usr/lib/llvm-3.4/build/include/llvm/IR/IntrinsicInst.h:
 
@@ -429,3 +438,5 @@ ExecutorTimerInfo.h:
 /usr/lib/llvm-3.4/build/include/llvm/Support/CallSite.h:
 
 /usr/lib/llvm-3.4/build/include/llvm/Support/ValueHandle.h:
+
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/Support/CompressionStream.h:

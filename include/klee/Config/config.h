@@ -7,14 +7,23 @@
 /* Enable KLEE DEBUG checks */
 /* #undef ENABLE_KLEE_DEBUG */
 
+/* Enable metaSMT API */
+/* #undef ENABLE_METASMT */
+
+/* Using STP Solver backend */
+#define ENABLE_STP 1
+
+/* Using Z3 Solver backend */
+#define ENABLE_Z3 1
+
 /* Does the platform use __ctype_b_loc, etc. */
 #define HAVE_CTYPE_EXTERNALS 1
 
+/* Define to 1 if you have the <gperftools/malloc_extension.h> header file. */
+/* #undef HAVE_GPERFTOOLS_MALLOC_EXTENSION_H */
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
-
-/* Define to 1 if you have the `stp' library (-lstp). */
-#define HAVE_LIBSTP 1
 
 /* Define if mallinfo() is available on this platform. */
 #define HAVE_MALLINFO 1
@@ -58,6 +67,19 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
 
+/* Z3 needs a Z3_context passed to Z3_get_error_msg() */
+#define HAVE_Z3_GET_ERROR_MSG_NEEDS_CONTEXT 1
+
+/* Define to 1 if you have the <zlib.h> header file. */
+#define HAVE_ZLIB_H 1
+
+/* Enable time stamping the sources */
+/* #undef KLEE_ENABLE_TIMESTAMP */
+
+/* Define to empty or 'const' depending on how SELinux qualifies its security
+   context parameters. */
+/* #undef KLEE_SELINUX_CTX_CONST */
+
 /* LLVM version is release (instead of development) */
 #define LLVM_IS_RELEASE 1
 
@@ -74,7 +96,7 @@
 #define PACKAGE_NAME "KLEE"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "KLEE 1.1.0"
+#define PACKAGE_STRING "KLEE 1.2.0"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "klee-"
@@ -83,7 +105,7 @@
 #define PACKAGE_URL "https://klee.github.io"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "1.1.0"
+#define PACKAGE_VERSION "1.2.0"
 
 /* Configuration for runtime libraries */
 #define RUNTIME_CONFIGURATION "Release+Asserts"
@@ -93,14 +115,5 @@
 
 /* klee-uclibc is supported */
 #define SUPPORT_KLEE_UCLIBC 1
-
-/* Supporting metaSMT API */
-/* #undef SUPPORT_METASMT */
-
-/* Supporting STP Backend */
-#define SUPPORT_STP 1
-
-/* Supporting Z3 Backend */
-#define SUPPORT_Z3 1
 
 #endif

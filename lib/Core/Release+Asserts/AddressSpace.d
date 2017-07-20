@@ -37,47 +37,14 @@
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/ADT/ImmutableTree.h \
  CoreStats.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Statistic.h \
- Memory.h Context.h ITree.h \
+ Memory.h Context.h \
+ /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Taint.h \
+ /usr/lib/llvm-3.4/build/include/llvm/ADT/StringExtras.h TimingSolver.h \
+ /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Solver.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/CommandLine.h \
  /usr/lib/llvm-3.4/build/include/llvm/Support/CommandLine.h \
  /usr/lib/llvm-3.4/build/include/llvm/ADT/StringMap.h \
  /usr/lib/llvm-3.4/build/include/llvm/Support/Allocator.h \
- /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/ExecutionState.h \
- /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Constraints.h \
- /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/ADT/TreeStream.h \
- /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/../../lib/Core/AddressSpace.h \
- /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/Module/KInstIterator.h \
- /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/Module/KInstruction.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/Instructions.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/Attributes.h \
- /usr/lib/llvm-3.4/build/include/llvm/ADT/FoldingSet.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/CallingConv.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/DerivedTypes.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/Type.h \
- /usr/lib/llvm-3.4/build/include/llvm/Support/CBindingWrapping.h \
- /usr/lib/llvm-3.4/build/include/llvm-c/Core.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/InstrTypes.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/Instruction.h \
- /usr/lib/llvm-3.4/build/include/llvm/ADT/ilist_node.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/User.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/Value.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/Use.h \
- /usr/lib/llvm-3.4/build/include/llvm/ADT/PointerIntPair.h \
- /usr/lib/llvm-3.4/build/include/llvm/Support/DebugLoc.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/Instruction.def \
- /usr/lib/llvm-3.4/build/include/llvm/IR/OperandTraits.h \
- /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Taint.h \
- /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/util/ExprVisitor.h \
- /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/util/ExprHashMap.h \
- Dependency.h /usr/lib/llvm-3.4/build/include/llvm/IR/Function.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/Argument.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/BasicBlock.h \
- /usr/lib/llvm-3.4/build/include/llvm/ADT/ilist.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/SymbolTableListTraits.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/GlobalValue.h \
- /usr/lib/llvm-3.4/build/include/llvm/IR/Constant.h \
- /usr/lib/llvm-3.4/build/include/llvm/ADT/StringExtras.h TimingSolver.h \
- /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Solver.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/TimerStatIncrementer.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Statistics.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Statistic.h \
@@ -163,7 +130,13 @@ Memory.h:
 
 Context.h:
 
-ITree.h:
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Taint.h:
+
+/usr/lib/llvm-3.4/build/include/llvm/ADT/StringExtras.h:
+
+TimingSolver.h:
+
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Solver.h:
 
 /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/CommandLine.h:
 
@@ -172,82 +145,6 @@ ITree.h:
 /usr/lib/llvm-3.4/build/include/llvm/ADT/StringMap.h:
 
 /usr/lib/llvm-3.4/build/include/llvm/Support/Allocator.h:
-
-/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/ExecutionState.h:
-
-/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Constraints.h:
-
-/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/ADT/TreeStream.h:
-
-/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/../../lib/Core/AddressSpace.h:
-
-/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/Module/KInstIterator.h:
-
-/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Internal/Module/KInstruction.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/Instructions.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/Attributes.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/ADT/FoldingSet.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/CallingConv.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/DerivedTypes.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/Type.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/Support/CBindingWrapping.h:
-
-/usr/lib/llvm-3.4/build/include/llvm-c/Core.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/InstrTypes.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/Instruction.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/ADT/ilist_node.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/User.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/Value.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/Use.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/ADT/PointerIntPair.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/Support/DebugLoc.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/Instruction.def:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/OperandTraits.h:
-
-/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Taint.h:
-
-/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/util/ExprVisitor.h:
-
-/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/util/ExprHashMap.h:
-
-Dependency.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/Function.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/Argument.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/BasicBlock.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/ADT/ilist.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/SymbolTableListTraits.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/GlobalValue.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/IR/Constant.h:
-
-/usr/lib/llvm-3.4/build/include/llvm/ADT/StringExtras.h:
-
-TimingSolver.h:
-
-/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Solver.h:
 
 /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/TimerStatIncrementer.h:
 

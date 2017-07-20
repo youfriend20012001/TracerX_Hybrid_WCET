@@ -18,8 +18,8 @@
 #include "klee/CommandLine.h"
 #include "klee/Expr.h"
 
-#include "ITree.h"
 #include "Memory.h"
+#include "TxTree.h"
 #if LLVM_VERSION_CODE >= LLVM_VERSION(3, 3)
 #include "llvm/IR/Function.h"
 #else
@@ -76,7 +76,7 @@ StackFrame::~StackFrame() {
 ExecutionState::ExecutionState(KFunction *kf)
     : pc(kf->instructions), prevPC(pc), queryCost(0.), weight(1), depth(0),
       instsSinceCovNew(0), coveredNew(false), forkDisabled(false), ptreeNode(0),
-       itreeNode(0),taint(0), startPCDest(0), nInstruction(0),depthCount(0) {
+       txTreeNode(0),taint(0), startPCDest(0), nInstruction(0),depthCount(0) {
   pushFrame(0, kf);
 
   maxSpecialCount = 100;
@@ -92,11 +92,11 @@ ExecutionState::ExecutionState(KFunction *kf)
   splitCount = 0;
 }
 
-#ifdef SUPPORT_Z3
+#ifdef ENABLE_Z3
 ExecutionState::ExecutionState(const KInstIterator &srcPrevPC,
                                const std::vector<ref<Expr> > &assumptions)
     : prevPC(srcPrevPC), constraints(assumptions), queryCost(0.), ptreeNode(0),
-      itreeNode(0), nInstruction(0),depthCount(0) {
+      txTreeNode(0), nInstruction(0),depthCount(0) {
 
 	maxSpecialCount = 100;
 	pathSpecial = new KInstIterator[maxSpecialCount];
@@ -112,7 +112,7 @@ ExecutionState::ExecutionState(const KInstIterator &srcPrevPC,
 }
 #else
 ExecutionState::ExecutionState(const std::vector<ref<Expr> > &assumptions)
-    : constraints(assumptions), queryCost(0.), ptreeNode(0), itreeNode(0), nInstruction(0),depthCount(0) {
+    : constraints(assumptions), queryCost(0.), ptreeNode(0), txTreeNode(0), nInstruction(0),depthCount(0) {
 	maxSpecialCount = 100;
 	pathSpecial = new KInstIterator[maxSpecialCount];
 	pathSpecialCount = 0;
@@ -170,7 +170,7 @@ ExecutionState::ExecutionState(const ExecutionState& state):
     forkDisabled(state.forkDisabled),
     coveredLines(state.coveredLines),
     ptreeNode(state.ptreeNode),
-    itreeNode(state.itreeNode),
+    txTreeNode(state.txTreeNode),
     symbolics(state.symbolics),
     arrayNames(state.arrayNames),
     taint(state.taint),
@@ -205,17 +205,16 @@ ExecutionState::ExecutionState(const ExecutionState& state):
   }
 }
 
-void ExecutionState::addITreeConstraint(ref<Expr> e, llvm::Instruction *instr) {
+void ExecutionState::addTxTreeConstraint(ref<Expr> e, llvm::Instruction *instr) {
   if (!INTERPOLATION_ENABLED)
     return;
 
   llvm::BranchInst *binstr = llvm::dyn_cast<llvm::BranchInst>(instr);
 
-  if (itreeNode && binstr && binstr->isConditional()) {
-    itreeNode->addConstraint(e, binstr->getCondition());
-  }
-  else if(itreeNode && !binstr){
-	itreeNode->addConstraint(e, instr->getOperand(0));
+  if (txTreeNode && binstr && binstr->isConditional()) {
+    txTreeNode->addConstraint(e, binstr->getCondition());
+  } else if (txTreeNode && !binstr) {
+    txTreeNode->addConstraint(e, instr->getOperand(0));
   }
 
 }
@@ -333,7 +332,7 @@ void ExecutionState::popFrame(KInstruction *ki, ref<Expr> returnValue) {
   stack.pop_back();
 
   if (INTERPOLATION_ENABLED && site && ki)
-    itreeNode->bindReturnValue(site, ki->inst, returnValue);
+    txTreeNode->bindReturnValue(site, ki->inst, returnValue);
 }
 
 void ExecutionState::addSymbolic(const MemoryObject *mo, const Array *array) { 
@@ -555,8 +554,8 @@ void ExecutionState::dumpStack(llvm::raw_ostream &out) const {
 
       out << ai->getName().str();
       // XXX should go through function
-      ref<Expr> value = sf.locals[sf.kf->getArgRegister(index++)].value; 
-      if (isa<ConstantExpr>(value))
+      ref<Expr> value = sf.locals[sf.kf->getArgRegister(index++)].value;
+      if (value.get() && isa<ConstantExpr>(value))
         out << "=" << value;
     }
     out << ")";
@@ -565,4 +564,28 @@ void ExecutionState::dumpStack(llvm::raw_ostream &out) const {
     out << "\n";
     target = sf.caller;
   }
+}
+
+void ExecutionState::debugSubsumption(uint64_t level) {
+  txTreeNode->dependency->debugSubsumptionLevel = level;
+}
+
+void ExecutionState::debugSubsumptionOff() {
+#if ENABLE_Z3
+  txTreeNode->dependency->debugSubsumptionLevel = DebugSubsumption;
+#else
+  txTreeNode->dependency->debugSubsumptionLevel = 0;
+#endif
+}
+
+void ExecutionState::debugState(uint64_t level) {
+  txTreeNode->dependency->debugStateLevel = level;
+}
+
+void ExecutionState::debugStateOff() {
+#if ENABLE_Z3
+  txTreeNode->dependency->debugStateLevel = DebugState;
+#else
+  txTreeNode->dependency->debugStateLevel = 0;
+#endif
 }

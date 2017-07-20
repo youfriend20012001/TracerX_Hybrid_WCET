@@ -39,7 +39,8 @@
  /usr/lib/llvm-3.4/build/include/llvm/Support/TimeValue.h \
  /usr/lib/llvm-3.4/build/include/llvm/Support/system_error.h \
  /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/util/PrintContext.h \
- /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Solver.h
+ /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Solver.h \
+ /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/CommandLine.h
 
 /usr/lib/llvm-3.4/build/include/llvm/Support/Casting.h:
 
@@ -118,3 +119,5 @@
 /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/util/PrintContext.h:
 
 /home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/Solver.h:
+
+/home/tannguyen/Dropbox/NUS/Test_Merge/TracerX_Taint/include/klee/CommandLine.h:
